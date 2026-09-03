@@ -1,0 +1,209 @@
+@import url("https://fonts.cdnfonts.com/css/minercraftory");
+
+@font-face {
+  font-family: "Fusion Pixel";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src: url("/fonts/fusion-pixel-12px-proportional-zh_hans.ttf.woff2") format("woff2");
+}
+
+:root {
+  --background-color: #141419;
+  --midground-color: #2c2c35;
+  --foreground-color: #4a4a58;
+  --primary-color: #3b8526;
+  --primary-color-hover: #50ad2e;
+  --primary-color-active: #4bbc22;
+  --primary-color-dark: #1d4d13;
+  --accent-color: #2e6be5;
+  --secondary-color: #d0d1d4;
+  --secondary-color-dark: #58585a;
+  --text-color: #ffffff;
+  --text-color-invert: #1a1a21;
+  --bezel-color: rgba(0, 0, 0, 0.45);
+  --bezel-color-invert: rgba(255, 255, 255, 0.18);
+  --club-ctech: #50ad2e;
+  --club-ctech-dark: #1d4d13;
+  --club-coal: #ffb040;
+  --club-coal-dark: #6e4304;
+  --pixel-font: "Minercraftory", "Fusion Pixel", "Courier New", monospace;
+}
+
+html {
+  background-color: var(--background-color);
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--pixel-font);
+  color: var(--text-color);
+  background-color: var(--background-color);
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+img.pixel {
+  image-rendering: pixelated;
+}
+
+.Page {
+  flex: 1;
+  width: 100%;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 24px 20px 64px;
+  box-sizing: border-box;
+}
+
+.mc-panel {
+  background-color: var(--midground-color);
+  box-shadow:
+    inset 0 -4px 0 0 rgba(0, 0, 0, 0.45),
+    inset -4px 0 0 0 rgba(0, 0, 0, 0.45),
+    inset 0 4px 0 0 rgba(255, 255, 255, 0.16),
+    inset 4px 0 0 0 rgba(255, 255, 255, 0.16),
+    0 0 0 4px #0c0c10;
+  padding: 24px;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 8px 0 28px;
+}
+
+.page-header img {
+  width: 48px;
+  height: 48px;
+}
+
+.page-header h1 {
+  font-size: 1.9rem;
+  margin: 0;
+  text-shadow: 3px 3px 0 rgba(0, 0, 0, 0.6);
+  letter-spacing: 2px;
+}
+
+.page-header p {
+  margin: 6px 0 0;
+  opacity: 0.75;
+  font-size: 0.95rem;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 1.35rem;
+  margin: 48px 0 20px;
+  text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.6);
+}
+
+.section-title img {
+  width: 28px;
+  height: 28px;
+}
+
+.float-block {
+  position: absolute;
+  image-rendering: pixelated;
+  pointer-events: none;
+  animation: floatY var(--d, 6s) ease-in-out infinite;
+  animation-delay: var(--delay, 0s);
+  opacity: 0.85;
+  z-index: 0;
+}
+
+.xp-bar {
+  height: 14px;
+  background-color: #101014;
+  box-shadow: inset 0 -2px 0 0 var(--bezel-color), inset -2px 0 0 0 var(--bezel-color),
+    inset 0 2px 0 0 var(--bezel-color-invert), inset 2px 0 0 0 var(--bezel-color-invert);
+  overflow: hidden;
+}
+
+.xp-bar-fill {
+  height: 100%;
+  width: 0;
+  background: repeating-linear-gradient(90deg, #7fe62c 0 8px, #5fbf1a 8px 16px);
+}
+
+@keyframes floatY {
+  0%,
+  100% {
+    transform: translateY(0) rotate(var(--rot, 0deg));
+  }
+  50% {
+    transform: translateY(-18px) rotate(var(--rot, 0deg));
+  }
+}
+
+@keyframes shine {
+  from {
+    background-position: 200% center;
+  }
+  to {
+    background-position: -200% center;
+  }
+}
+
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes popIn {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes flashWhite {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes shake {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  20% {
+    transform: translate(-6px, 3px);
+  }
+  40% {
+    transform: translate(5px, -4px);
+  }
+  60% {
+    transform: translate(-4px, -3px);
+  }
+  80% {
+    transform: translate(4px, 4px);
+  }
+}
+
+@media (max-width: 768px) {
+  .Page {
+    padding: 16px 12px 48px;
+  }
+}
