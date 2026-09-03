@@ -1,0 +1,205 @@
+---
+import Layout from "../layouts/Layout.astro";
+import LotteryMachine from "../react/LotteryMachine";
+---
+
+<Layout title="命运抽签仪式 · MC 联谊嘉年华">
+  <div class="page-header">
+    <img src="/img/items/tnt.png" alt="" class="pixel" />
+    <div>
+      <h1>命运抽签仪式</h1>
+      <p>点燃 TNT，随机洗牌分组 · 核心源码全程公示，种子可复核</p>
+    </div>
+  </div>
+
+  <LotteryMachine client:load />
+</Layout>
+
+<style is:global>
+  .Lottery {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .Lottery.shaking {
+    animation: shake 0.15s linear infinite;
+  }
+
+  .Controls {
+    display: flex;
+    align-items: flex-end;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .Control {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 0.9rem;
+  }
+
+  .Control .Input,
+  .Control input {
+    width: 140px;
+  }
+
+  .StartBtn {
+    min-height: 38px;
+  }
+
+  .RegNotice,
+  .Error {
+    margin: 0;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .Error {
+    color: var(--error-color, #ff8383);
+  }
+
+  .ErrorTag {
+    background: #ff8383;
+    color: #1a1a21;
+    font-size: 12px;
+    padding: 3px 8px;
+  }
+
+  .Machine {
+    position: relative;
+    text-align: center;
+    padding: 36px 24px 28px;
+    overflow: hidden;
+  }
+
+  .Slot {
+    font-size: 2.2rem;
+    letter-spacing: 3px;
+    min-height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 18px;
+    text-shadow: 3px 3px 0 rgba(0, 0, 0, 0.6);
+    word-break: break-all;
+  }
+
+  .BoomTnt {
+    position: absolute;
+    right: 18px;
+    bottom: 18px;
+    animation: popIn 0.2s ease-out;
+  }
+
+  .BoomFlash {
+    position: absolute;
+    inset: 0;
+    background: #fff;
+    animation: flashWhite 0.5s ease-out forwards;
+    pointer-events: none;
+  }
+
+  .ResultTitle {
+    margin: 8px 0 0;
+    font-size: 1.1rem;
+  }
+
+  .ResultTitle code {
+    background: #0c0c10;
+    padding: 2px 6px;
+  }
+
+  .TeamGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 16px;
+  }
+
+  .TeamCard {
+    padding: 16px;
+  }
+
+  .TeamHead {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    font-size: 1.05rem;
+  }
+
+  .TeamHead .Tag {
+    margin-left: auto;
+  }
+
+  .TeamCard ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: 0.92rem;
+  }
+
+  .TeamCard li {
+    padding: 5px 0 5px 18px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    position: relative;
+  }
+
+  .TeamCard li:before {
+    content: "";
+    position: absolute;
+    left: 2px;
+    top: 50%;
+    width: 6px;
+    height: 6px;
+    transform: translateY(-50%);
+    background: var(--club-ctech);
+  }
+
+  .SourcePanel {
+    margin-top: 12px;
+    background: #0c0c10;
+    box-shadow:
+      inset 0 -4px 0 0 rgba(0, 0, 0, 0.6),
+      inset -4px 0 0 0 rgba(0, 0, 0, 0.6),
+      inset 0 4px 0 0 rgba(255, 255, 255, 0.08),
+      inset 4px 0 0 0 rgba(255, 255, 255, 0.08);
+    padding: 16px 20px;
+    font-size: 0.9rem;
+  }
+
+  .SourcePanel summary {
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 4px 0;
+  }
+
+  .SourceNote {
+    opacity: 0.75;
+    line-height: 1.7;
+  }
+
+  .SourcePanel pre {
+    margin: 8px 0 0;
+    padding: 16px;
+    background: #101016;
+    border-left: 4px solid var(--club-ctech);
+    overflow-x: auto;
+    line-height: 1.6;
+    font-size: 0.8rem;
+    max-height: 420px;
+    overflow-y: auto;
+  }
+
+  @keyframes xpFill {
+    from {
+      width: 0;
+    }
+    to {
+      width: 100%;
+    }
+  }
+</style>
