@@ -1,5 +1,5 @@
-# build output
-dist/
+# build output (仅根目录的 Astro 构建产物；不影响 vendor 里的 dist)
+/dist/
 # generated types
 .astro/
 
