@@ -1,20 +1,341 @@
 ---
+import Layout from "../layouts/Layout.astro";
 
-import Counter from '../components/Counter.jsx';
+const heroBlocks = [
+  { src: "/img/items/diamond.png", size: 56, left: "6%", top: "18%", d: "7s", delay: "0s", blur: false, rot: "-8deg" },
+  { src: "/img/items/coal.png", size: 44, left: "14%", top: "68%", d: "6s", delay: "1.2s", blur: false, rot: "10deg" },
+  { src: "/img/items/tnt.png", size: 64, left: "26%", top: "30%", d: "8s", delay: "0.6s", blur: true, rot: "6deg" },
+  { src: "/img/items/ender_pearl.png", size: 40, left: "38%", top: "76%", d: "5.5s", delay: "2s", blur: false, rot: "0deg" },
+  { src: "/img/items/golden_apple.png", size: 52, left: "58%", top: "12%", d: "6.5s", delay: "0.3s", blur: true, rot: "-12deg" },
+  { src: "/img/items/redstone_block.png", size: 58, left: "72%", top: "62%", d: "7.5s", delay: "1.6s", blur: false, rot: "8deg" },
+  { src: "/img/items/diamond_pickaxe.png", size: 60, left: "84%", top: "22%", d: "6s", delay: "0.9s", blur: false, rot: "18deg" },
+  { src: "/img/items/grass_block.png", size: 72, left: "90%", top: "70%", d: "9s", delay: "0s", blur: true, rot: "-6deg" },
+];
 
+const clubs = [
+  {
+    name: "电脑技术协会",
+    color: "ctech",
+    icon: "/img/items/crafting_table.png",
+    qr: "/qr/ctech-club.svg",
+    desc: "写代码、玩硬件、整活 AI。这次我们负责服务器与红石全自动化！",
+    tag: "扫码进①群",
+  },
+  {
+    name: "山商煤炭社",
+    color: "coal",
+    icon: "/img/items/coal_block.png",
+    qr: "/qr/coal-club.svg",
+    desc: "专业挖矿三十年，从煤炭到下界合金。这次我们负责把矿道挖到你家！",
+    tag: "扫码进②群",
+  },
+];
+
+const steps = [
+  { icon: "/img/items/diamond.png", title: "① 报名", desc: "填写信息加入名单" },
+  { icon: "/img/items/tnt.png", title: "② 随机组队", desc: "TNT 点燃，命运分组" },
+  { icon: "/img/items/crafting_table.png", title: "③ 联谊开黑", desc: "共建、竞速、团战" },
+  { icon: "/img/items/ender_pearl.png", title: "④ 晒图提交", desc: "高光时刻进摄影展" },
+];
+
+const marqueeText = "电脑技术协会 × 山商煤炭社 · MC 联谊嘉年华 ·  ";
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-		<Counter client:load />
-	</body>
-</html>
+<Layout>
+  <section class="Hero">
+    {heroBlocks.map((b) => (
+      <img
+        src={b.src}
+        alt=""
+        width={b.size}
+        height={b.size}
+        class:list={["pixel", "float-block", { blur: b.blur }]}
+        style={`left:${b.left};top:${b.top};--d:${b.d};--delay:${b.delay};--rot:${b.rot};`}
+      />
+    ))}
+    <div class="Hero-inner">
+      <p class="Hero-kicker">C TECH CLUB × SHANSHANG COAL CLUB</p>
+      <h1 class="Hero-title">MC 联谊嘉年华</h1>
+      <p class="Hero-sub">
+        两个社团，一个世界。今晚 8 点，我们一起在方块世界里从陌生打到熟悉。
+      </p>
+      <div class="Hero-tags">
+        <span class="mc-panel TagBox">时间：本周六 19:00 - 23:00</span>
+        <span class="mc-panel TagBox">地点：MC 联谊服务器（进群获取 IP）</span>
+      </div>
+      <div class="Hero-cta">
+        <a href="/register"><button class="Btn Btn-primary">立即报名</button></a>
+        <a href="/lottery"><button class="Btn Btn-secondary">查看随机组队</button></a>
+      </div>
+    </div>
+  </section>
+
+  <div class="Marquee" aria-hidden="true">
+    <div class="Marquee-track">
+      {Array.from({ length: 8 }).map(() => marqueeText).join("")}
+      {Array.from({ length: 8 }).map(() => marqueeText).join("")}
+    </div>
+  </div>
+
+  <h2 class="section-title">
+    <img src="/img/items/golden_apple.png" alt="" class="pixel" />
+    扫码进群 · 蹲个队友
+  </h2>
+  <div class="ClubGrid">
+    {clubs.map((c) => (
+      <div class:list={["ClubCard", "mc-panel", c.color]}>
+        <div class="ClubHead">
+          <img src={c.icon} alt="" width={36} height={36} class="pixel" />
+          <strong>{c.name}</strong>
+        </div>
+        <p>{c.desc}</p>
+        <img class="ClubQR pixel" src={c.qr} alt={`${c.name}入群二维码（示例，请替换）`} />
+        <span class="ClubTag">{c.tag}（示例二维码，以实际发布为准）</span>
+      </div>
+    ))}
+  </div>
+
+  <h2 class="section-title">
+    <img src="/img/items/diamond_pickaxe.png" alt="" class="pixel" />
+    活动流程
+  </h2>
+  <div class="StepGrid">
+    {steps.map((s) => (
+      <div class="StepCard mc-panel">
+        <img src={s.icon} alt="" width={44} height={44} class="pixel" />
+        <strong>{s.title}</strong>
+        <p>{s.desc}</p>
+      </div>
+    ))}
+  </div>
+</Layout>
+
+<style>
+  .Hero {
+    position: relative;
+    overflow: hidden;
+    min-height: 420px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 40px 20px;
+    box-shadow:
+      inset 0 -4px 0 0 rgba(0, 0, 0, 0.5),
+      0 6px 0 0 rgba(0, 0, 0, 0.35);
+  }
+
+  .Hero-inner {
+    position: relative;
+    z-index: 1;
+    max-width: 720px;
+  }
+
+  .Hero-kicker {
+    letter-spacing: 6px;
+    font-size: 0.85rem;
+    opacity: 0.65;
+    margin: 0 0 10px;
+  }
+
+  .Hero-title {
+    font-size: clamp(2.6rem, 8vw, 4.6rem);
+    margin: 0;
+    letter-spacing: 6px;
+    background: linear-gradient(100deg, #fff 42%, #ffd83d 50%, #7fe62c 56%, #fff 62%);
+    background-size: 220% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: shine 3.2s linear infinite;
+    filter: drop-shadow(4px 4px 0 rgba(0, 0, 0, 0.7));
+  }
+
+  .Hero-sub {
+    font-size: 1.05rem;
+    line-height: 1.9;
+    opacity: 0.85;
+    margin: 18px auto 26px;
+  }
+
+  .Hero-tags {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 28px;
+  }
+
+  .TagBox {
+    padding: 8px 14px;
+    font-size: 0.88rem;
+  }
+
+  .Hero-cta {
+    display: flex;
+    justify-content: center;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+
+  .Hero-cta a {
+    text-decoration: none;
+  }
+
+  .Btn {
+    font-family: var(--pixel-font);
+    font-size: 1.05rem;
+    letter-spacing: 2px;
+    color: var(--text-color);
+    border: none;
+    cursor: pointer;
+    padding: 12px 28px;
+    box-shadow:
+      inset 0 -4px 0 0 rgba(0, 0, 0, 0.4),
+      inset -4px 0 0 0 rgba(0, 0, 0, 0.4),
+      inset 0 4px 0 0 rgba(255, 255, 255, 0.25),
+      inset 4px 0 0 0 rgba(255, 255, 255, 0.25),
+      0 0 0 3px #0c0c10;
+  }
+
+  .Btn:active {
+    transform: translateY(3px);
+  }
+
+  .Btn-primary {
+    background: var(--primary-color);
+  }
+
+  .Btn-primary:hover {
+    background: var(--primary-color-hover);
+  }
+
+  .Btn-secondary {
+    background: var(--midground-color);
+  }
+
+  .Btn-secondary:hover {
+    background: var(--foreground-color);
+  }
+
+  .Marquee {
+    overflow: hidden;
+    margin: 36px -20px 8px;
+    background: var(--primary-color-dark);
+    box-shadow: inset 0 -4px 0 0 rgba(0, 0, 0, 0.5), inset 0 4px 0 0 rgba(255, 255, 255, 0.12);
+  }
+
+  .Marquee-track {
+    display: inline-block;
+    white-space: pre;
+    padding: 10px 0;
+    animation: marquee 22s linear infinite;
+    font-size: 0.95rem;
+    letter-spacing: 2px;
+    opacity: 0.9;
+  }
+
+  .ClubGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+
+  .ClubCard {
+    text-align: center;
+    transition: transform 0.18s ease;
+  }
+
+  .ClubCard:hover {
+    transform: translateY(-6px);
+  }
+
+  .ClubCard.ctech {
+    box-shadow:
+      inset 0 -4px 0 0 rgba(0, 0, 0, 0.45),
+      inset -4px 0 0 0 rgba(0, 0, 0, 0.45),
+      inset 0 4px 0 0 rgba(255, 255, 255, 0.16),
+      inset 4px 0 0 0 rgba(255, 255, 255, 0.16),
+      0 0 0 4px var(--club-ctech);
+  }
+
+  .ClubCard.coal {
+    box-shadow:
+      inset 0 -4px 0 0 rgba(0, 0, 0, 0.45),
+      inset -4px 0 0 0 rgba(0, 0, 0, 0.45),
+      inset 0 4px 0 0 rgba(255, 255, 255, 0.16),
+      inset 4px 0 0 0 rgba(255, 255, 255, 0.16),
+      0 0 0 4px var(--club-coal);
+  }
+
+  .ClubHead {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font-size: 1.2rem;
+    margin-bottom: 10px;
+  }
+
+  .ClubCard.ctech .ClubHead strong {
+    color: var(--club-ctech);
+  }
+
+  .ClubCard.coal .ClubHead strong {
+    color: var(--club-coal);
+  }
+
+  .ClubCard p {
+    font-size: 0.88rem;
+    line-height: 1.8;
+    opacity: 0.8;
+    min-height: 3.5em;
+  }
+
+  .ClubQR {
+    width: 180px;
+    height: 180px;
+    max-width: 70%;
+    box-shadow: 0 0 0 4px #0c0c10;
+  }
+
+  .ClubTag {
+    display: block;
+    margin-top: 12px;
+    font-size: 0.78rem;
+    opacity: 0.6;
+  }
+
+  .StepGrid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+
+  .StepCard {
+    text-align: center;
+    padding: 20px 14px;
+  }
+
+  .StepCard strong {
+    display: block;
+    margin: 12px 0 6px;
+    font-size: 1.02rem;
+  }
+
+  .StepCard p {
+    margin: 0;
+    font-size: 0.82rem;
+    opacity: 0.7;
+  }
+
+  @media (max-width: 768px) {
+    .ClubGrid {
+      grid-template-columns: 1fr;
+    }
+
+    .StepGrid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+</style>
