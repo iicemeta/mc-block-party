@@ -1,0 +1,165 @@
+---
+import Layout from "../layouts/Layout.astro";
+import ScreenshotUploader from "../react/ScreenshotUploader";
+
+const samples = [
+  { icon: "/img/items/grass_block.png", title: "出生点集合", desc: "大家在草坪广场集合的合影" },
+  { icon: "/img/items/diamond.png", title: "挖矿竞速", desc: "谁先挖到钻石？" },
+  { icon: "/img/items/tnt.png", title: "爆破现场", desc: "TNT 连环爆破名场面" },
+  { icon: "/img/items/redstone_block.png", title: "红石机关", desc: "联合打造的全自动大门" },
+  { icon: "/img/items/diamond_pickaxe.png", title: "联合基建", desc: "两社共同铺设的主干道" },
+  { icon: "/img/items/golden_apple.png", title: "颁奖时刻", desc: "金苹果颁给最佳队友" },
+];
+---
+
+<Layout title="摄影展 · 晒出你的高光 · MC 联谊嘉年华">
+  <div class="page-header">
+    <img src="/img/items/ender_pearl.png" alt="" class="pixel" />
+    <div>
+      <h1>摄影展 · 晒出你的高光</h1>
+      <p>把联谊过程中的精彩截图交上来，我们会选优秀作品放进展区</p>
+    </div>
+  </div>
+
+  <ScreenshotUploader client:load />
+
+  <h2 class="section-title">
+    <img src="/img/items/azure_bluet.png" alt="" class="pixel" />
+    示例展区（占位）
+  </h2>
+  <div class="SampleGrid">
+    {
+      samples.map((s) => (
+        <div class="SampleCard mc-panel">
+          <div class="SampleArt">
+            <img src={s.icon} alt="" width={40} height={40} class="pixel" />
+          </div>
+          <strong>{s.title}</strong>
+          <p>{s.desc}</p>
+        </div>
+      ))
+    }
+  </div>
+</Layout>
+
+<style>
+  .SampleGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+  }
+
+  .SampleCard {
+    padding: 16px;
+    text-align: center;
+  }
+
+  .SampleArt {
+    height: 96px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 12px;
+    background:
+      repeating-conic-gradient(#20202a 0% 25%, #26262f 0% 50%) 0 0 / 16px 16px;
+    box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.4);
+  }
+
+  .SampleCard strong {
+    font-size: 0.95rem;
+  }
+
+  .SampleCard p {
+    margin: 8px 0 0;
+    font-size: 0.8rem;
+    opacity: 0.65;
+  }
+</style>
+
+<style is:global>
+  .DropZone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 40px 20px;
+    text-align: center;
+    cursor: pointer;
+    border: 3px dashed rgba(255, 255, 255, 0.35);
+    box-shadow:
+      inset 0 -4px 0 0 rgba(0, 0, 0, 0.45),
+      inset -4px 0 0 0 rgba(0, 0, 0, 0.45),
+      inset 0 4px 0 0 rgba(255, 255, 255, 0.16),
+      inset 4px 0 0 0 rgba(255, 255, 255, 0.16);
+    transition: border-color 0.15s, background-color 0.15s;
+  }
+
+  .DropZone span {
+    font-size: 0.85rem;
+    opacity: 0.7;
+  }
+
+  .DropZone.over {
+    border-color: var(--club-ctech);
+    background-color: rgba(80, 173, 46, 0.12);
+  }
+
+  .Notice {
+    margin: 14px 0 0;
+    color: var(--club-coal);
+    font-size: 0.9rem;
+  }
+
+  .ShotGrid {
+    margin-top: 20px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 16px;
+  }
+
+  .ShotCard {
+    position: relative;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    animation: popIn 0.25s ease-out;
+  }
+
+  .ShotCard img {
+    width: 100%;
+    height: 130px;
+    object-fit: cover;
+    background: #101016;
+    box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.5);
+  }
+
+  .ShotRemove {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 26px;
+    height: 26px;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    color: #fff;
+    background: rgba(0, 0, 0, 0.65);
+  }
+
+  .ShotRemove:hover {
+    background: #c33;
+  }
+
+  .SubmitRow {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-top: 24px;
+  }
+
+  .SubmitOk {
+    color: var(--club-ctech);
+    font-size: 0.95rem;
+  }
+</style>
