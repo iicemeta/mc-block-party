@@ -54,6 +54,7 @@ export default function LotteryMachine() {
     stageTimer.current = window.setTimeout(() => {
       if (slotTimer.current) window.clearInterval(slotTimer.current);
       setPhase("boom");
+      window.dispatchEvent(new CustomEvent("mc-sfx", { detail: "explode" }));
       stageTimer.current = window.setTimeout(() => {
         try {
           const result = assignTeams(pool, teamSize, mulberry32(useSeed));
