@@ -1,5 +1,6 @@
 ---
 import Layout from "../layouts/Layout.astro";
+import HeroCta from "../react/HeroCta";
 
 const heroBlocks = [
   { src: "/img/items/diamond.png", size: 56, left: "6%", top: "18%", d: "7s", delay: "0s", blur: false, rot: "-8deg" },
@@ -64,8 +65,7 @@ const marqueeText = "电脑技术协会 × 山商煤炭社 · MC 联谊嘉年华
         <span class="mc-panel TagBox">地点：MC 联谊服务器（进群获取 IP）</span>
       </div>
       <div class="Hero-cta">
-        <a href="/register"><button class="Btn Btn-primary">立即报名</button></a>
-        <a href="/lottery"><button class="Btn Btn-secondary">查看随机组队</button></a>
+        <HeroCta client:load />
       </div>
     </div>
   </section>
@@ -178,17 +178,20 @@ const marqueeText = "电脑技术协会 × 山商煤炭社 · MC 联谊嘉年华
     flex-wrap: wrap;
   }
 
-  .Hero-cta a {
+  .HeroCta {
+    display: flex;
+    justify-content: center;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+
+  .HeroCta a {
     text-decoration: none;
   }
 
-  .Btn {
-    font-family: var(--pixel-font);
+  .HeroCta .Button {
     font-size: 1.05rem;
     letter-spacing: 2px;
-    color: var(--text-color);
-    border: none;
-    cursor: pointer;
     padding: 12px 28px;
     box-shadow:
       inset 0 -4px 0 0 rgba(0, 0, 0, 0.4),
@@ -196,26 +199,6 @@ const marqueeText = "电脑技术协会 × 山商煤炭社 · MC 联谊嘉年华
       inset 0 4px 0 0 rgba(255, 255, 255, 0.25),
       inset 4px 0 0 0 rgba(255, 255, 255, 0.25),
       0 0 0 3px #0c0c10;
-  }
-
-  .Btn:active {
-    transform: translateY(3px);
-  }
-
-  .Btn-primary {
-    background: var(--primary-color);
-  }
-
-  .Btn-primary:hover {
-    background: var(--primary-color-hover);
-  }
-
-  .Btn-secondary {
-    background: var(--midground-color);
-  }
-
-  .Btn-secondary:hover {
-    background: var(--foreground-color);
   }
 
   .Marquee {

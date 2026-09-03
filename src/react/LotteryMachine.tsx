@@ -123,7 +123,7 @@ export default function LotteryMachine() {
       )}
       {error && (
         <p className="Error">
-          <span className="ErrorTag">出错了</span> {error}
+          <Tag className="ErrorTag">出错了</Tag> {error}
         </p>
       )}
 
