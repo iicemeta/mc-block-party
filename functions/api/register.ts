@@ -108,7 +108,7 @@ function parseFields(body: RegisterBody): { fields?: ParsedFields; error?: strin
   const skills = Array.isArray(body.skills) ? body.skills.map(asText) : [];
 
   if (!name || name.length > 40) return { error: "姓名不合法" };
-  if (!/^[A-Za-z0-9-]{4,20}$/.test(studentId)) return { error: "学号不合法" };
+  if (!/^\d{10}$/.test(studentId)) return { error: "学号不合法（应为 10 位数字，如 2026212700）" };
   if (!college || college.length > 60) return { error: "学院/班级不合法" };
   if (!/^\d{5,15}$/.test(qq)) return { error: "QQ 号不合法" };
   if (!mcId || mcId.length > 40 || /[\r\n\t]/.test(mcId)) return { error: "MC 游戏 ID 不合法" };
@@ -133,7 +133,7 @@ const CREATE_DDL = `CREATE TABLE IF NOT EXISTS registrations (
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 )`;
 
-type ExistingRow = { uuid: string };
+type ExistingRow = { uuid: string; student_id: string };
 
 export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   const secret = env.TURNSTILE_SECRET;
@@ -171,9 +171,20 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     await db.prepare(CREATE_DDL).run();
 
     const existing = await db
-      .prepare("SELECT uuid FROM registrations WHERE student_id = ?1")
+      .prepare("SELECT uuid, student_id FROM registrations WHERE student_id = ?1")
       .bind(studentId)
       .first<ExistingRow>();
+
+    if (!existing && clientUuid) {
+      const owned = await db
+        .prepare("SELECT student_id FROM registrations WHERE uuid = ?1")
+        .bind(clientUuid)
+        .first<{ student_id: string }>();
+      if (owned) {
+        return bad("学号不可修改。如需变更学号，请联系活动负责人处理。", 400);
+      }
+      return bad("UUID 不存在或已失效，请检查输入；如为新报名请清除 UUID 后再提交。", 403);
+    }
 
     if (!existing) {
       const uuid = crypto.randomUUID();

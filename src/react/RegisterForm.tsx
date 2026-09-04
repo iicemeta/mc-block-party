@@ -75,7 +75,9 @@ export default function RegisterForm() {
   const missing = useMemo(() => {
     const need: string[] = [];
     if (!form.name.trim()) need.push("姓名");
-    if (!form.studentId.trim()) need.push("学号");
+    const sid = form.studentId.trim();
+    if (!sid) need.push("学号");
+    else if (!/^\d{10}$/.test(sid)) need.push("学号（需 10 位数字）");
     if (!form.college.trim()) need.push("学院/班级");
     if (!form.qq.trim()) need.push("QQ 号");
     if (!form.mcId.trim()) need.push("MC 游戏 ID");
@@ -169,6 +171,21 @@ export default function RegisterForm() {
     }
   };
 
+  const exitModify = () => {
+    setActiveUuid("");
+    const record = loadJSON<Registration>(STORAGE_KEYS.registration);
+    if (record?.uuid) {
+      const { uuid: _u, ...rest } = record;
+      saveJSON(STORAGE_KEYS.registration, rest);
+    }
+    const draft = loadJSON<Registration>(STORAGE_KEYS.draft);
+    if (draft?.uuid) {
+      const { uuid: _d, ...rest } = draft;
+      saveJSON(STORAGE_KEYS.draft, rest);
+    }
+    setRecordMessage("已退出修改模式，可重新填写报名");
+  };
+
   const copyUuid = async () => {
     try {
       await navigator.clipboard.writeText(issuedUuid);
@@ -216,7 +233,14 @@ export default function RegisterForm() {
         <Tag className="Tag_success">草稿自动保存</Tag>
         {draftRestored && <Tag>已恢复上次草稿</Tag>}
         <Tag>提交后将返回 UUID 凭证，请妥善保存</Tag>
-        {activeUuid && <Tag className="Tag_success">修改模式：将更新你原有报名</Tag>}
+        {activeUuid && (
+          <>
+            <Tag className="Tag_success">修改模式：将更新你原有报名</Tag>
+            <button type="button" className="ExitModify" onClick={exitModify}>
+              退出修改模式
+            </button>
+          </>
+        )}
       </div>
 
       <div className="ModifyRow">
@@ -238,11 +262,12 @@ export default function RegisterForm() {
           <Input value={form.name} onChange={(v) => set("name", v)} placeholder="你的真实姓名" />
         </label>
         <label className="Field">
-          <span>学号 *</span>
+          <span>学号 *{activeUuid && "（不可修改，如需变更请联系活动负责人）"}</span>
           <Input
             value={form.studentId}
             onChange={(v) => set("studentId", v)}
-            placeholder="例如 2024010101"
+            placeholder="10 位数字，例如 2026212700"
+            disabled={!!activeUuid}
           />
         </label>
         <label className="Field">
