@@ -41,9 +41,9 @@ function isD1(value: unknown): value is D1Database {
 }
 
 export function resolveD1(env: Env): D1Database | null {
-  const preferred = ["DB", "mc_block_party_db", "MC_BLOCK_PARTY_DB"];
+  const preferred = ["DB", "mc_block_party_db", "MC_BLOCK_PARTY_DB", "mc-block-party-db"];
   for (const key of preferred) {
-    const candidate = env[key];
+    const candidate = (env as Record<string, unknown>)[key];
     if (isD1(candidate)) return candidate;
   }
   for (const candidate of Object.values(env)) {
@@ -51,6 +51,9 @@ export function resolveD1(env: Env): D1Database | null {
   }
   return null;
 }
+
+const errMsg = (e: unknown): string =>
+  e instanceof Error ? e.message : String(e);
 
 async function siteverify(
   secret: string,
@@ -131,38 +134,47 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   if (!db) return bad("数据库绑定不可用", 500);
 
   try {
-    await db.prepare(
-      `CREATE TABLE IF NOT EXISTS registrations (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        student_id TEXT NOT NULL UNIQUE,
-        college TEXT NOT NULL,
-        qq TEXT NOT NULL,
-        mc_id TEXT NOT NULL,
-        skills TEXT NOT NULL,
-        created_at TEXT NOT NULL DEFAULT (datetime('now')),
-        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
-      )`
-    ).run();
+    try {
+      await db.prepare(
+        `CREATE TABLE IF NOT EXISTS registrations (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL,
+          student_id TEXT NOT NULL UNIQUE,
+          college TEXT NOT NULL,
+          qq TEXT NOT NULL,
+          mc_id TEXT NOT NULL,
+          skills TEXT NOT NULL,
+          created_at TEXT NOT NULL DEFAULT (datetime('now')),
+          updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )`
+      ).run();
+    } catch (e) {
+      throw new Error(`建表失败: ${errMsg(e)}`);
+    }
 
-    const insert = await db
-      .prepare(
-        `INSERT INTO registrations (name, student_id, college, qq, mc_id, skills)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6)
-         ON CONFLICT(student_id) DO UPDATE SET
-           name = excluded.name,
-           college = excluded.college,
-           qq = excluded.qq,
-           mc_id = excluded.mc_id,
-           skills = excluded.skills,
-           updated_at = datetime('now')`
-      )
-      .bind(name, studentId, college, qq, mcId, JSON.stringify(skills))
-      .run();
+    let insert;
+    try {
+      insert = await db
+        .prepare(
+          `INSERT INTO registrations (name, student_id, college, qq, mc_id, skills)
+           VALUES (?1, ?2, ?3, ?4, ?5, ?6)
+           ON CONFLICT(student_id) DO UPDATE SET
+             name = excluded.name,
+             college = excluded.college,
+             qq = excluded.qq,
+             mc_id = excluded.mc_id,
+             skills = excluded.skills,
+             updated_at = datetime('now')`
+        )
+        .bind(name, studentId, college, qq, mcId, JSON.stringify(skills))
+        .run();
+    } catch (e) {
+      throw new Error(`写入失败: ${errMsg(e)}`);
+    }
 
     return json({ ok: true, id: insert.meta?.last_row_id ?? null });
   } catch (e) {
     console.error("d1 error", e);
-    return bad("数据库写入失败，请稍后重试", 500);
+    return bad(`数据库写入失败：${errMsg(e)}`, 500);
   }
 };
