@@ -26,13 +26,18 @@ type UpstreamResult = {
 
 export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   const secret = env.TURNSTILE_SECRET;
-  if (!secret) return bad("服务端未配置 TURNSTILE_SECRET", 500);
+  if (!secret) {
+    console.error("upload 500: TURNSTILE_SECRET 未配置");
+    return bad("服务端未配置 TURNSTILE_SECRET", 500);
+  }
 
   const upstreamUrl = (env.IMG_UPLOAD_URL ?? "").trim();
   if (!upstreamUrl) {
+    console.error("upload 500: IMG_UPLOAD_URL 未配置");
     return bad("服务端未配置 IMG_UPLOAD_URL（值应为完整的图床接口地址）", 500);
   }
   if (!/^https:\/\/\S+$/.test(upstreamUrl)) {
+    console.error(`upload 500: IMG_UPLOAD_URL 配置不正确，当前值：${upstreamUrl}`);
     return bad(
       "IMG_UPLOAD_URL 配置不正确：值只能填接口地址本身（https:// 开头、不含空格与引号），不要带上变量名或等号",
       500
