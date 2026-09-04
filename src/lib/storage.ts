@@ -1,23 +1,21 @@
 export const STORAGE_KEYS = {
   draft: "mc-event:registration-draft",
   registration: "mc-event:registration",
-  showcaseUuid: "mc-event:showcase-uuid",
+  session: "mc-event:session",
 } as const;
 
-function backend(): Storage | null {
+export function removeKey(key: string): void {
   try {
-    if (typeof window === "undefined") return null;
-    return window.localStorage;
+    window.localStorage.removeItem(key);
   } catch {
-    return null;
+    /* 隐私模式等场景忽略 */
   }
 }
 
 export function loadJSON<T>(key: string): T | null {
-  const store = backend();
-  if (!store) return null;
   try {
-    const raw = store.getItem(key);
+    if (typeof window === "undefined") return null;
+    const raw = window.localStorage.getItem(key);
     return raw ? (JSON.parse(raw) as T) : null;
   } catch {
     return null;
@@ -25,10 +23,8 @@ export function loadJSON<T>(key: string): T | null {
 }
 
 export function saveJSON(key: string, value: unknown): boolean {
-  const store = backend();
-  if (!store) return false;
   try {
-    store.setItem(key, JSON.stringify(value));
+    window.localStorage.setItem(key, JSON.stringify(value));
     return true;
   } catch {
     return false;

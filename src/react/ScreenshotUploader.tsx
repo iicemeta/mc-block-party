@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Button, Input } from "minecraft-react-ui";
 import Turnstile, { resetTurnstile } from "./Turnstile";
-import { STORAGE_KEYS, loadJSON, saveJSON } from "../lib/storage";
+import { getSessionUuid, isValidUuid } from "../lib/session";
 
 type Shot = {
   id: string;
@@ -31,15 +31,8 @@ export default function ScreenshotUploader() {
   const noticeTimer = useRef<number | null>(null);
 
   useEffect(() => {
-    const saved = loadJSON<string>(STORAGE_KEYS.showcaseUuid);
-    if (saved && UUID_RE.test(saved)) {
-      setUuidInput(saved);
-      return;
-    }
-    const record = loadJSON<{ uuid?: string }>(STORAGE_KEYS.registration);
-    if (record?.uuid && UUID_RE.test(record.uuid)) {
-      setUuidInput(record.uuid);
-    }
+    const saved = getSessionUuid();
+    if (saved) setUuidInput(saved);
   }, []);
 
   useEffect(() => {
@@ -96,10 +89,10 @@ export default function ScreenshotUploader() {
     if (shots.length === 0 || !turnstileToken || uploading) return;
     const uuid = uuidInput.trim();
     if (!uuid) {
-      setSubmitError("请先填写报名时获得的 UUID（它标识图片的上传者）");
+      setSubmitError("请先填写报名时获得的 UUID（可到登记处登录后自动填入）");
       return;
     }
-    if (!UUID_RE.test(uuid)) {
+    if (!isValidUuid(uuid)) {
       setSubmitError("UUID 格式不正确，请检查后重新输入");
       return;
     }
@@ -123,7 +116,6 @@ export default function ScreenshotUploader() {
         setShots([]);
         setTurnstileToken("");
         resetTurnstile();
-        saveJSON(STORAGE_KEYS.showcaseUuid, uuid);
         window.dispatchEvent(new CustomEvent("showcase:refresh"));
       } else {
         setSubmitError(data?.message ?? `提交失败（${res.status}），请稍后重试`);
@@ -196,11 +188,11 @@ export default function ScreenshotUploader() {
       </label>
 
       <div className="ModifyRow">
-        <span>报名凭证 UUID *（标识上传者，提交后图片将进入风采展示区）</span>
+        <span>报名凭证 UUID *{uuidInput && "（已自动填入登录凭证）"}：</span>
         <Input
           value={uuidInput}
           onChange={setUuidInput}
-          placeholder="例如 3f2504e0-4f89-41d3-9a0c-0305e82c3301"
+          placeholder="到登记处登录后可自动填入"
         />
       </div>
 
