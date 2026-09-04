@@ -2,7 +2,7 @@
 
 - 日期：2026-09-03
 - 状态：已确认
-- 参与方：电脑技术协会、山商煤炭社
+- 参与方：MyGO!!!!!、山商煤炭社
 
 ## 背景与目标
 
@@ -37,7 +37,7 @@
 ## 视觉主题
 
 - 全局引入 `minecraft-react-ui/style.css`，通过 CSS 变量定制主题色：
-  - 电脑技术协会：绿宝石色系（`--primary-color: #3b8526` 一类）
+  - MyGO!!!!!：绿宝石色系（`--primary-color: #3b8526` 一类）
   - 山商煤炭社：煤炭深灰/岩黑色系
 - 字体：
   - 英文/数字标题：Minercraftory（USAGE.md 的 `fonts.cdnfonts.com` CDN 方案，加载失败优雅降级）
@@ -52,7 +52,7 @@
 
 ### 1. 主页 `/`
 
-- Hero 区：活动标题「电脑技术协会 × 山商煤炭社 MC 联谊」、时间/地点 Tag、CTA 按钮（立即报名 → `/register`）
+- Hero 区：活动标题「MyGO!!!!! × 山商煤炭社 MC 联谊」、时间/地点 Tag、CTA 按钮（立即报名 → `/register`）
 - 双社团二维码卡片：并排两张 MC 物品栏风格卡片（名称、简介、二维码图、入群提示）
 - 活动流程/亮点区：报名 → 组队 → 联谊 → 晒图，四个步骤配 MC 物品图标
 - 二维码占位：自绘像素风 QR 样式 SVG，放 `public/qr/ctech-club.svg`、`public/qr/coal-club.svg`，之后直接替换同名文件即可

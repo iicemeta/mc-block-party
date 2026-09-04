@@ -139,7 +139,7 @@ Expected: 12 个文件。全部 `<img>` 加 `image-rendering: pixelated`。
 **Files:** Modify `src/pages/index.astro`
 
 - Hero：多层漂浮方块背景（8-10 个 `.float-block`，不同 `--d` 延迟尺寸、部分 blur 制造景深）、渐变扫金光大标题「MC 联谊嘉年华」、双社团 Tag、时间地点 Tag、CTA（立即报名→`/register`、查看组队→`/lottery`）
-- 跑马灯横幅：`marquee` 动画循环文字「电脑技术协会 × 山商煤炭社 ★」
+- 跑马灯横幅：`marquee` 动画循环文字「MyGO!!!!! × 山商煤炭社 ★」
 - 扫码进群区：两张 `.mc-panel` 社团卡（图标/名称/一句话简介/二维码/Tag 提示），hover 抬升，双色描边区分
 - 活动流程区：报名→组队→联谊→晒图 四步图标卡
 - 响应式：≤768px 单列
