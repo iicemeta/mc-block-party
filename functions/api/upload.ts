@@ -1,5 +1,5 @@
 /// <reference types="@cloudflare/workers-types" />
-import { errMsg, siteverify } from "../_turnstile";
+import { errMsg, resolveD1, siteverify, UUID_RE } from "../_lib";
 
 export type Env = {
   TURNSTILE_SECRET?: string;
@@ -17,6 +17,17 @@ const json = (data: unknown, status = 200) =>
   });
 
 const bad = (message: string, status = 400) => json({ ok: false, message }, status);
+
+const CREATE_SHOWCASE_DDL = `CREATE TABLE IF NOT EXISTS showcase (
+  id INTEGER PRIMARY KEY,
+  registration_uuid TEXT NOT NULL,
+  mc_id TEXT NOT NULL,
+  image_url TEXT NOT NULL,
+  caption TEXT NOT NULL DEFAULT '',
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+)`;
+
+const CREATE_SHOWCASE_INDEX = `CREATE INDEX IF NOT EXISTS idx_showcase_created ON showcase(created_at DESC)`;
 
 type UpstreamResult = {
   url?: string;
@@ -63,12 +74,41 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     return bad("缺少人机验证凭证，请先完成验证");
   }
 
+  const uuid = typeof form.get("uuid") === "string" ? (form.get("uuid") as string).trim() : "";
+  if (!uuid) return bad("请填写报名时获得的 UUID");
+  if (!UUID_RE.test(uuid)) return bad("UUID 格式不正确");
+
   const files = form.getAll("files").filter((f): f is File => f instanceof File);
   if (files.length === 0) return bad("未选择任何图片");
   if (files.length > MAX_FILES) return bad(`单次最多提交 ${MAX_FILES} 张图片`);
   for (const f of files) {
     if (!f.type.startsWith("image/")) return bad(`包含非图片文件：${f.name}`);
     if (f.size > MAX_FILE_BYTES) return bad(`图片超过 5MB 限制：${f.name}`);
+  }
+  const captions = form.getAll("captions").map((c) => (typeof c === "string" ? c.trim() : ""));
+
+  const db = resolveD1(env);
+  if (!db) return bad("数据库绑定不可用", 500);
+
+  let mcId: string;
+  try {
+    const reg = await db
+      .prepare("SELECT mc_id FROM registrations WHERE uuid = ?1")
+      .bind(uuid)
+      .first<{ mc_id: string }>();
+    if (!reg) {
+      return json(
+        {
+          ok: false,
+          message: "未找到该 UUID 对应的报名记录。请先完成报名，或检查 UUID 是否输入正确。",
+        },
+        403
+      );
+    }
+    mcId = reg.mc_id;
+  } catch (e) {
+    console.error("upload d1 error", e);
+    return bad(`数据库查询失败：${errMsg(e)}`, 500);
   }
 
   const verifyError = await siteverify(secret, turnstileToken, env.TURNSTILE_HOSTNAMES, "gallery");
@@ -94,5 +134,22 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     return bad(`图床连接失败：${errMsg(e)}`, 502);
   }
 
-  return json({ ok: true, results });
+  try {
+    await db.prepare(CREATE_SHOWCASE_DDL).run();
+    await db.prepare(CREATE_SHOWCASE_INDEX).run();
+    for (let i = 0; i < results.length; i++) {
+      await db
+        .prepare(
+          `INSERT INTO showcase (registration_uuid, mc_id, image_url, caption)
+           VALUES (?1, ?2, ?3, ?4)`
+        )
+        .bind(uuid, mcId, results[i].url, (captions[i] ?? "").slice(0, 100))
+        .run();
+    }
+  } catch (e) {
+    console.error("upload d1 error", e);
+    return bad(`图片已上传，但风采展示记录写入失败：${errMsg(e)}`, 500);
+  }
+
+  return json({ ok: true, mcId, results });
 };

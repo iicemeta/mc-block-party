@@ -1,15 +1,7 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import ScreenshotUploader from "../react/ScreenshotUploader";
-
-const samples = [
-  { icon: "/img/items/grass_block.png", title: "出生点集合", desc: "大家在草坪广场集合的合影" },
-  { icon: "/img/items/diamond.png", title: "挖矿竞速", desc: "谁先挖到钻石？" },
-  { icon: "/img/items/tnt.png", title: "爆破现场", desc: "TNT 连环爆破名场面" },
-  { icon: "/img/items/redstone_block.png", title: "红石机关", desc: "联合打造的全自动大门" },
-  { icon: "/img/items/diamond_pickaxe.png", title: "联合基建", desc: "两社共同铺设的主干道" },
-  { icon: "/img/items/golden_apple.png", title: "颁奖时刻", desc: "金苹果颁给最佳队友" },
-];
+import ShowcaseGallery from "../react/ShowcaseGallery";
 ---
 
 <Layout title="摄影展 · 晒出你的高光 · MC 联谊嘉年华">
@@ -24,38 +16,27 @@ const samples = [
   <ScreenshotUploader client:load />
 
   <h2 class="section-title">
-    <img src="/img/items/azure_bluet.png" alt="" class="pixel" />
-    示例展区（占位）
+    <img src="/img/items/golden_apple.png" alt="" class="pixel" />
+    风采展示区
   </h2>
-  <div class="SampleGrid">
-    {
-      samples.map((s) => (
-        <div class="SampleCard mc-panel">
-          <div class="SampleArt">
-            <img src={s.icon} alt="" width={40} height={40} class="pixel" />
-          </div>
-          <strong>{s.title}</strong>
-          <p>{s.desc}</p>
-        </div>
-      ))
-    }
-  </div>
+  <ShowcaseGallery client:load />
 </Layout>
 
-<style>
-  .SampleGrid {
+<style is:global>
+  .ShowcaseGrid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     gap: 16px;
   }
 
-  .SampleCard {
-    padding: 16px;
+  .ShowcaseCard {
+    padding: 12px;
     text-align: center;
+    animation: popIn 0.3s ease-out;
   }
 
-  .SampleArt {
-    height: 96px;
+  .ShowcaseArt {
+    height: 150px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -63,16 +44,30 @@ const samples = [
     background:
       repeating-conic-gradient(#20202a 0% 25%, #26262f 0% 50%) 0 0 / 16px 16px;
     box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.4);
+    overflow: hidden;
   }
 
-  .SampleCard strong {
-    font-size: 0.95rem;
+  /* 等比缩放：完整显示图片、不裁剪不拉伸，空隙由像素棋盘底填充 */
+  .ShowcaseArt img {
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
   }
 
-  .SampleCard p {
-    margin: 8px 0 0;
-    font-size: 0.8rem;
-    opacity: 0.65;
+  .ShowcaseTitle {
+    font-size: 1rem;
+    color: var(--club-ctech);
+    text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.6);
+  }
+
+  .ShowcaseCaption {
+    margin: 6px 0 0;
+    font-size: 0.82rem;
+    opacity: 0.7;
+    line-height: 1.6;
+    word-break: break-all;
   }
 </style>
 

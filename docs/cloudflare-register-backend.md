@@ -29,9 +29,13 @@ D1 数据库 registrations 表
 
 ## 晒图上传后端（/api/upload）
 
-- 前端一次请求批量提交所有图片（`files` 多值字段 + `captions` 每张一句 + `turnstileToken`）
-- 服务端：Turnstile 校验（action=gallery）→ 单张 ≤5MB、单次 ≤20 张、仅图片类型 → 逐张转发图床 → 返回 `{ ok, results: [{ name, url }] }`
+- 前端一次请求批量提交所有图片（`files` 多值字段 + `captions` 每张一句 + `turnstileToken` + `uuid`）
+- 服务端：**UUID 验证**（必须为已报名凭证，MC 游戏 ID 以报名记录为准，防止冒用）→ Turnstile 校验（action=gallery）→ 单张 ≤5MB、单次 ≤20 张、仅图片类型 → 逐张转发图床 → 写入 `showcase` 表 → 返回 `{ ok, mcId, results: [{ name, url }] }`
 - 图床域名不出现在前端与仓库；图片 URL 由上传结果返回给提交者（图片可访问必然包含域名，属预期）
+
+## 风采展示接口（/api/showcase）
+
+- `GET /api/showcase`：返回最新 60 条展示记录 `{ mcId, imageUrl, caption, createdAt }`，gallery 页「风采展示区」消费
 
 ## 数据表
 

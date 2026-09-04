@@ -14,6 +14,7 @@ type UploadResult = { name: string; url: string };
 
 const MAX_SIZE = 5 * 1024 * 1024;
 const MAX_FILES = 20;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export default function ScreenshotUploader() {
   const [shots, setShots] = useState<Shot[]>([]);
@@ -24,6 +25,7 @@ export default function ScreenshotUploader() {
   const [turnstileToken, setTurnstileToken] = useState("");
   const [uploading, setUploading] = useState(false);
   const [submitError, setSubmitError] = useState("");
+  const [uuidInput, setUuidInput] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const noticeTimer = useRef<number | null>(null);
 
@@ -79,6 +81,15 @@ export default function ScreenshotUploader() {
 
   const onSubmit = async () => {
     if (shots.length === 0 || !turnstileToken || uploading) return;
+    const uuid = uuidInput.trim();
+    if (!uuid) {
+      setSubmitError("请先填写报名时获得的 UUID（它标识图片的上传者）");
+      return;
+    }
+    if (!UUID_RE.test(uuid)) {
+      setSubmitError("UUID 格式不正确，请检查后重新输入");
+      return;
+    }
     setUploading(true);
     setSubmitError("");
     try {
@@ -88,6 +99,7 @@ export default function ScreenshotUploader() {
         fd.append("captions", s.caption);
       }
       fd.append("turnstileToken", turnstileToken);
+      fd.append("uuid", uuid);
       const res = await fetch("/api/upload", { method: "POST", body: fd });
       const data = (await res.json().catch(() => null)) as
         | { ok?: boolean; message?: string; results?: UploadResult[] }
@@ -167,6 +179,15 @@ export default function ScreenshotUploader() {
           }}
         />
       </label>
+
+      <div className="ModifyRow">
+        <span>报名凭证 UUID *（标识上传者，提交后图片将进入风采展示区）</span>
+        <Input
+          value={uuidInput}
+          onChange={setUuidInput}
+          placeholder="例如 3f2504e0-4f89-41d3-9a0c-0305e82c3301"
+        />
+      </div>
 
       {notice && <p className="Notice">{notice}</p>}
 

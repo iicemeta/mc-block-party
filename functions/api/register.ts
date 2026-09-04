@@ -1,5 +1,5 @@
 /// <reference types="@cloudflare/workers-types" />
-import { errMsg, siteverify } from "../_turnstile";
+import { errMsg, resolveD1, siteverify, UUID_RE } from "../_lib";
 
 export type Env = {
   TURNSTILE_SECRET?: string;
@@ -20,7 +20,6 @@ type RegisterBody = {
 const SKILL_VALUES = new Set(["build", "redstone", "survival", "pvp"]);
 const EXPECTED_ACTION = "register";
 const MAX_BODY_BYTES = 10_000;
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const json = (data: unknown, status = 200) =>
   new Response(JSON.stringify(data), {
@@ -32,27 +31,6 @@ const bad = (message: string, status = 400) => json({ ok: false, message }, stat
 
 function asText(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
-}
-
-function isD1(value: unknown): value is D1Database {
-  return (
-    !!value &&
-    typeof value === "object" &&
-    typeof (value as { prepare?: unknown }).prepare === "function" &&
-    typeof (value as { batch?: unknown }).batch === "function"
-  );
-}
-
-export function resolveD1(env: Env): D1Database | null {
-  const preferred = ["DB", "mc_block_party_db", "MC_BLOCK_PARTY_DB", "mc-block-party-db"];
-  for (const key of preferred) {
-    const candidate = (env as Record<string, unknown>)[key];
-    if (isD1(candidate)) return candidate;
-  }
-  for (const candidate of Object.values(env)) {
-    if (isD1(candidate)) return candidate;
-  }
-  return null;
 }
 
 type ParsedFields = {
