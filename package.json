@@ -10,7 +10,8 @@
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
-    "prepare": "node scripts/check-vendor.mjs"
+    "prepare": "node scripts/check-vendor.mjs",
+    "pagesdeploy": "wrangler pages deploy ./dist --project-name=mc-block-party --branch=main"
   },
   "dependencies": {
     "@astrojs/react": "^6.0.5",

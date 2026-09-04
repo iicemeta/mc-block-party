@@ -13,11 +13,13 @@ type RegisterBody = {
   mcId?: unknown;
   skills?: unknown;
   turnstileToken?: unknown;
+  uuid?: unknown;
 };
 
 const SKILL_VALUES = new Set(["build", "redstone", "survival", "pvp"]);
 const EXPECTED_ACTION = "register";
 const MAX_BODY_BYTES = 10_000;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const json = (data: unknown, status = 200) =>
   new Response(JSON.stringify(data), {
@@ -88,6 +90,51 @@ async function siteverify(
   }
 }
 
+type ParsedFields = {
+  name: string;
+  studentId: string;
+  college: string;
+  qq: string;
+  mcId: string;
+  skills: string[];
+};
+
+function parseFields(body: RegisterBody): { fields?: ParsedFields; error?: string } {
+  const name = asText(body.name);
+  const studentId = asText(body.studentId);
+  const college = asText(body.college);
+  const qq = asText(body.qq);
+  const mcId = asText(body.mcId);
+  const skills = Array.isArray(body.skills) ? body.skills.map(asText) : [];
+
+  if (!name || name.length > 40) return { error: "姓名不合法" };
+  if (!/^[A-Za-z0-9-]{4,20}$/.test(studentId)) return { error: "学号不合法" };
+  if (!college || college.length > 60) return { error: "学院/班级不合法" };
+  if (!/^\d{5,15}$/.test(qq)) return { error: "QQ 号不合法" };
+  if (!mcId || mcId.length > 40 || /[\r\n\t]/.test(mcId)) return { error: "MC 游戏 ID 不合法" };
+  if (skills.length === 0 || skills.length > 4 || skills.some((s) => !SKILL_VALUES.has(s))) {
+    return { error: "擅长方向不合法" };
+  }
+  return {
+    fields: { name, studentId, college, qq, mcId, skills },
+  };
+}
+
+const CREATE_DDL = `CREATE TABLE IF NOT EXISTS registrations (
+  id INTEGER PRIMARY KEY,
+  uuid TEXT NOT NULL UNIQUE,
+  name TEXT NOT NULL,
+  student_id TEXT NOT NULL UNIQUE,
+  college TEXT NOT NULL,
+  qq TEXT NOT NULL,
+  mc_id TEXT NOT NULL,
+  skills TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+)`;
+
+type ExistingRow = { uuid: string };
+
 export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   const secret = env.TURNSTILE_SECRET;
   if (!secret) return bad("服务端未配置 TURNSTILE_SECRET", 500);
@@ -107,25 +154,12 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     return bad("缺少人机验证凭证，请先完成验证");
   }
 
-  const name = asText(body.name);
-  const studentId = asText(body.studentId);
-  const college = asText(body.college);
-  const qq = asText(body.qq);
-  const mcId = asText(body.mcId);
-  const skills = Array.isArray(body.skills) ? body.skills.map(asText) : [];
+  const parsed = parseFields(body);
+  if (!parsed.fields) return bad(parsed.error ?? "字段不合法");
+  const { name, studentId, college, qq, mcId, skills } = parsed.fields;
 
-  if (!name || name.length > 40) return bad("姓名不合法");
-  if (!/^[A-Za-z0-9-]{4,20}$/.test(studentId)) return bad("学号不合法");
-  if (!college || college.length > 60) return bad("学院/班级不合法");
-  if (!/^\d{5,15}$/.test(qq)) return bad("QQ 号不合法");
-  if (!mcId || mcId.length > 40 || /[\r\n\t]/.test(mcId)) return bad("MC 游戏 ID 不合法");
-  if (
-    skills.length === 0 ||
-    skills.length > 4 ||
-    skills.some((s) => !SKILL_VALUES.has(s))
-  ) {
-    return bad("擅长方向不合法");
-  }
+  const clientUuid = asText(body.uuid);
+  if (clientUuid && !UUID_RE.test(clientUuid)) return bad("UUID 格式不正确");
 
   const verifyError = await siteverify(secret, turnstileToken, env.TURNSTILE_HOSTNAMES);
   if (verifyError !== null) return bad(verifyError, 403);
@@ -134,47 +168,108 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   if (!db) return bad("数据库绑定不可用", 500);
 
   try {
-    try {
-      await db.prepare(
-        `CREATE TABLE IF NOT EXISTS registrations (
-          id INTEGER PRIMARY KEY,
-          name TEXT NOT NULL,
-          student_id TEXT NOT NULL UNIQUE,
-          college TEXT NOT NULL,
-          qq TEXT NOT NULL,
-          mc_id TEXT NOT NULL,
-          skills TEXT NOT NULL,
-          created_at TEXT NOT NULL DEFAULT (datetime('now')),
-          updated_at TEXT NOT NULL DEFAULT (datetime('now'))
-        )`
-      ).run();
-    } catch (e) {
-      throw new Error(`建表失败: ${errMsg(e)}`);
-    }
+    await db.prepare(CREATE_DDL).run();
 
-    let insert;
-    try {
-      insert = await db
+    const existing = await db
+      .prepare("SELECT uuid FROM registrations WHERE student_id = ?1")
+      .bind(studentId)
+      .first<ExistingRow>();
+
+    if (!existing) {
+      const uuid = crypto.randomUUID();
+      await db
         .prepare(
-          `INSERT INTO registrations (name, student_id, college, qq, mc_id, skills)
-           VALUES (?1, ?2, ?3, ?4, ?5, ?6)
-           ON CONFLICT(student_id) DO UPDATE SET
-             name = excluded.name,
-             college = excluded.college,
-             qq = excluded.qq,
-             mc_id = excluded.mc_id,
-             skills = excluded.skills,
-             updated_at = datetime('now')`
+          `INSERT INTO registrations (uuid, name, student_id, college, qq, mc_id, skills)
+           VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)`
         )
-        .bind(name, studentId, college, qq, mcId, JSON.stringify(skills))
+        .bind(uuid, name, studentId, college, qq, mcId, JSON.stringify(skills))
         .run();
-    } catch (e) {
-      throw new Error(`写入失败: ${errMsg(e)}`);
+      return json({ ok: true, uuid, created: true });
     }
 
-    return json({ ok: true, id: insert.meta?.last_row_id ?? null });
+    if (!clientUuid) {
+      return json(
+        {
+          ok: false,
+          code: "already_registered",
+          message:
+            "该学号的同学已经报名。如需修改报名信息，请输入报名时获得的 UUID；如你从未报名但学号被占用，请联系活动负责人处理。",
+        },
+        409
+      );
+    }
+
+    if (clientUuid.toLowerCase() !== existing.uuid.toLowerCase()) {
+      return json(
+        {
+          ok: false,
+          code: "uuid_mismatch",
+          message: "UUID 与该学号的报名记录不匹配，无法修改。如确为你本人的报名，请联系活动负责人处理。",
+        },
+        403
+      );
+    }
+
+    await db
+      .prepare(
+        `UPDATE registrations
+         SET name = ?1, college = ?2, qq = ?3, mc_id = ?4, skills = ?5, updated_at = datetime('now')
+         WHERE student_id = ?6`
+      )
+      .bind(name, college, qq, mcId, JSON.stringify(skills), studentId)
+      .run();
+    return json({ ok: true, uuid: existing.uuid, updated: true });
   } catch (e) {
     console.error("d1 error", e);
     return bad(`数据库写入失败：${errMsg(e)}`, 500);
+  }
+};
+
+type RegistrationRow = {
+  name: string;
+  student_id: string;
+  college: string;
+  qq: string;
+  mc_id: string;
+  skills: string;
+};
+
+export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
+  const url = new URL(request.url);
+  const uuid = (url.searchParams.get("uuid") ?? "").trim();
+  if (!UUID_RE.test(uuid)) return bad("UUID 格式不正确");
+
+  const db = resolveD1(env);
+  if (!db) return bad("数据库绑定不可用", 500);
+
+  try {
+    const row = await db
+      .prepare(
+        "SELECT name, student_id, college, qq, mc_id, skills FROM registrations WHERE uuid = ?1"
+      )
+      .bind(uuid)
+      .first<RegistrationRow>();
+    if (!row) return json({ ok: false, message: "未找到该 UUID 对应的报名记录" }, 404);
+    let skills: string[] = [];
+    try {
+      const parsed = JSON.parse(row.skills);
+      if (Array.isArray(parsed)) skills = parsed.filter((s) => SKILL_VALUES.has(s));
+    } catch {
+      /* 容忍脏数据，返回空数组 */
+    }
+    return json({
+      ok: true,
+      registration: {
+        name: row.name,
+        studentId: row.student_id,
+        college: row.college,
+        qq: row.qq,
+        mcId: row.mc_id,
+        skills,
+      },
+    });
+  } catch (e) {
+    console.error("d1 error", e);
+    return bad(`数据库查询失败：${errMsg(e)}`, 500);
   }
 };

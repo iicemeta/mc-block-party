@@ -70,6 +70,59 @@ import RegisterForm from "../react/RegisterForm";
     font-size: 0.9rem;
   }
 
+  .ModifyRow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 12px;
+    margin-bottom: 20px;
+    background: rgba(255, 255, 255, 0.04);
+    box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.08);
+    font-size: 0.88rem;
+  }
+
+  .ModifyRow .Input,
+  .ModifyRow input {
+    flex: 1;
+    min-width: 240px;
+  }
+
+  .RecordMessage {
+    margin: -8px 0 16px;
+    font-size: 0.85rem;
+    color: var(--club-coal);
+  }
+
+  .UuidBox {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin: 18px 0 12px;
+    padding: 14px;
+    background: #101016;
+    box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.12);
+  }
+
+  .UuidLabel {
+    font-size: 0.85rem;
+    opacity: 0.7;
+  }
+
+  .UuidValue {
+    font-size: 0.95rem;
+    color: var(--club-ctech);
+    word-break: break-all;
+  }
+
+  .UuidWarning {
+    font-size: 0.9rem;
+    color: var(--club-coal);
+    line-height: 1.7;
+  }
+
   .SuccessPanel {
     max-width: 560px;
     margin: 0 auto;

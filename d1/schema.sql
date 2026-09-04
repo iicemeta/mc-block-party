@@ -1,5 +1,6 @@
 CREATE TABLE IF NOT EXISTS registrations (
   id INTEGER PRIMARY KEY,
+  uuid TEXT NOT NULL UNIQUE,
   name TEXT NOT NULL,
   student_id TEXT NOT NULL UNIQUE,
   college TEXT NOT NULL,

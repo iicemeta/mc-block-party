@@ -10,6 +10,7 @@ export type Registration = {
   qq: string;
   mcId: string;
   skills: string[];
+  uuid?: string;
   submittedAt?: string;
 };
 
@@ -29,11 +30,12 @@ const SKILL_OPTIONS = [
   { label: "PVP", value: "pvp" },
 ];
 
-const SKILL_LABELS: Record<string, string> = {
-  build: "建筑",
-  redstone: "红石",
-  survival: "生存",
-  pvp: "PVP",
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+type ApiResponse = {
+  ok?: boolean;
+  message?: string;
+  uuid?: string;
 };
 
 export default function RegisterForm() {
@@ -43,12 +45,22 @@ export default function RegisterForm() {
   const [turnstileToken, setTurnstileToken] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
+  const [issuedUuid, setIssuedUuid] = useState("");
+  const [uuidCopied, setUuidCopied] = useState(false);
+  const [activeUuid, setActiveUuid] = useState("");
+  const [uuidInput, setUuidInput] = useState("");
+  const [recordLoading, setRecordLoading] = useState(false);
+  const [recordMessage, setRecordMessage] = useState("");
 
   useEffect(() => {
     const draft = loadJSON<Registration>(STORAGE_KEYS.draft);
     if (draft && (draft.name || draft.mcId)) {
       setForm({ ...EMPTY, ...draft });
       setDraftRestored(true);
+    }
+    const record = loadJSON<Registration>(STORAGE_KEYS.registration);
+    if (record?.uuid && UUID_RE.test(record.uuid)) {
+      setActiveUuid(record.uuid);
     }
   }, []);
 
@@ -98,12 +110,15 @@ export default function RegisterForm() {
           mcId: record.mcId,
           skills: record.skills,
           turnstileToken,
+          uuid: activeUuid || undefined,
         }),
       });
-      const data = (await res.json().catch(() => null)) as { ok?: boolean; message?: string } | null;
-      if (res.ok && data?.ok) {
-        saveJSON(STORAGE_KEYS.draft, record);
-        saveJSON(STORAGE_KEYS.registration, record);
+      const data = (await res.json().catch(() => null)) as ApiResponse | null;
+      if (res.ok && data?.ok && data.uuid) {
+        const finalRecord = { ...record, uuid: data.uuid };
+        saveJSON(STORAGE_KEYS.draft, finalRecord);
+        saveJSON(STORAGE_KEYS.registration, finalRecord);
+        setIssuedUuid(data.uuid);
         setSubmitted(true);
       } else {
         setSubmitError(data?.message ?? `提交失败（${res.status}），请稍后重试`);
@@ -119,6 +134,51 @@ export default function RegisterForm() {
     }
   };
 
+  const loadByUuid = async () => {
+    const uuid = uuidInput.trim();
+    if (!UUID_RE.test(uuid)) {
+      setRecordMessage("UUID 格式不正确");
+      return;
+    }
+    setRecordLoading(true);
+    setRecordMessage("");
+    try {
+      const res = await fetch(`/api/register?uuid=${encodeURIComponent(uuid)}`);
+      const data = (await res.json().catch(() => null)) as
+        | { ok?: boolean; message?: string; registration?: Omit<Registration, "uuid"> }
+        | null;
+      if (res.ok && data?.ok && data.registration) {
+        const reg = data.registration;
+        setForm({
+          name: reg.name,
+          studentId: reg.studentId,
+          college: reg.college,
+          qq: reg.qq,
+          mcId: reg.mcId,
+          skills: reg.skills,
+        });
+        setActiveUuid(uuid);
+        setRecordMessage("已载入报名记录，修改后提交将更新原报名");
+      } else {
+        setRecordMessage(data?.message ?? `载入失败（${res.status}）`);
+      }
+    } catch {
+      setRecordMessage("网络异常，请稍后重试");
+    } finally {
+      setRecordLoading(false);
+    }
+  };
+
+  const copyUuid = async () => {
+    try {
+      await navigator.clipboard.writeText(issuedUuid);
+      setUuidCopied(true);
+      window.setTimeout(() => setUuidCopied(false), 2000);
+    } catch {
+      window.prompt("请手动复制你的 UUID：", issuedUuid);
+    }
+  };
+
   if (submitted) {
     return (
       <div className="SuccessPanel mc-panel">
@@ -127,7 +187,17 @@ export default function RegisterForm() {
         <p>
           欢迎加入 MC 联谊，<strong>{form.mcId}</strong>！你的信息已进入活动名单。
         </p>
-        <p className="SuccessHint">本机也留有副本，组队页可识别你的报名状态。</p>
+        <div className="UuidBox">
+          <span className="UuidLabel">你的唯一凭证（UUID）</span>
+          <code className="UuidValue">{issuedUuid}</code>
+          <Button variant="secondary" onClick={copyUuid}>
+            {uuidCopied ? "已复制" : "复制"}
+          </Button>
+        </div>
+        <p className="UuidWarning">
+          请务必保存好此 UUID：它是查询与修改报名信息的唯一凭证，
+          关闭页面后将无法再次查看！
+        </p>
         <div className="SuccessActions">
           <a href="/lottery">
             <Button variant="primary">去随机组队</Button>
@@ -145,7 +215,22 @@ export default function RegisterForm() {
       <div className="FormMeta">
         <Tag className="Tag_success">草稿自动保存</Tag>
         {draftRestored && <Tag>已恢复上次草稿</Tag>}
+        <Tag>提交后将返回 UUID 凭证，请妥善保存</Tag>
+        {activeUuid && <Tag className="Tag_success">修改模式：将更新你原有报名</Tag>}
       </div>
+
+      <div className="ModifyRow">
+        <span>已有报名？输入 UUID 查询并修改：</span>
+        <Input
+          value={uuidInput}
+          onChange={setUuidInput}
+          placeholder="例如 3f2504e0-4f89-41d3-9a0c-0305e82c3301"
+        />
+        <Button variant="secondary" disabled={recordLoading} onClick={loadByUuid}>
+          {recordLoading ? "载入中…" : "载入"}
+        </Button>
+      </div>
+      {recordMessage && <p className="RecordMessage">{recordMessage}</p>}
 
       <div className="FormGrid">
         <label className="Field">

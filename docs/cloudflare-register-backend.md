@@ -4,12 +4,13 @@
 
 ```
 浏览器 (RegisterForm.tsx)
-  │  POST /api/register  { name, studentId, college, qq, mcId, skills, turnstileToken }
+  │  POST /api/register  { name, studentId, college, qq, mcId, skills, turnstileToken, uuid? }
+  │  GET  /api/register?uuid=...  （查询报名用于回填）
   ▼
 functions/api/register.ts (Pages Function)
   │  1. 字段校验（长度/格式/白名单）
   │  2. Turnstile siteverify（校验 success + action=register）
-  │  3. D1 upsert（按学号唯一，重复报名=更新资料）
+  │  3. D1 写入/更新（新报名发 UUID，修改需验 UUID，学号占用返 409）
   ▼
 D1 数据库 registrations 表
 ```
@@ -30,8 +31,38 @@ D1 数据库 registrations 表
 函数在首次写入时会自动 `CREATE TABLE IF NOT EXISTS`，无需手动初始化。
 如需手动管理，在仪表盘 D1 控制台执行 `d1/schema.sql` 即可，两者等价。
 
-- `student_id` 唯一：同一学号重复报名视为**更新资料**（upsert），不会产生重复记录
+- `uuid`：报名唯一凭证（UUID v4，服务端 `crypto.randomUUID()` 生成），用于查询/修改，UNIQUE
+- `student_id` 唯一：同一学号只允许一条记录
 - `skills` 以 JSON 数组字符串存储：`["build","redstone","survival","pvp"]`
+
+### UUID 防冒用流程
+
+| 场景 | 行为 |
+|---|---|
+| 新学号报名 | 写入记录，返回 UUID（仅此一次展示） |
+| 相同学号 + 未提供 UUID | 409：`该学号的同学已经报名…请联系活动负责人处理` |
+| 相同学号 + UUID 匹配 | 更新原记录（UUID 不变） |
+| 相同学号 + UUID 不匹配 | 403：`UUID 与该学号的报名记录不匹配…请联系活动负责人处理` |
+
+### 存量表迁移（已建表时添加 uuid 列）
+
+仪表盘 D1 Console 执行：
+
+```sql
+ALTER TABLE registrations ADD COLUMN uuid TEXT UNIQUE;
+UPDATE registrations SET uuid =
+  lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' ||
+  substr(lower(hex(randomblob(2))), 2) || '-' ||
+  substr('89ab', abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))), 2) || '-' ||
+  lower(hex(randomblob(6)))
+WHERE uuid IS NULL;
+```
+
+（测试数据也可直接 `DROP TABLE registrations;` 让函数按新结构重建。）
+
+## 查询接口
+
+`GET /api/register?uuid=<uuid>` 返回该 UUID 对应的报名信息（用于表单回填）；404 表示无记录。
 
 ## 部署
 
@@ -49,7 +80,7 @@ Git 集成模式下推送即部署：
 仪表盘 → Storage & Databases → D1 → 你的数据库 → Console：
 
 ```sql
-SELECT id, name, student_id, college, qq, mc_id, skills, created_at, updated_at
+SELECT id, uuid, name, student_id, college, qq, mc_id, skills, created_at, updated_at
 FROM registrations ORDER BY updated_at DESC;
 ```
 
