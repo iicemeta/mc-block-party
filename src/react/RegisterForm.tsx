@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Button, CheckboxGroup, Input, Tag } from "minecraft-react-ui";
 import { STORAGE_KEYS, loadJSON, saveJSON } from "../lib/storage";
-import Turnstile from "./Turnstile";
+import Turnstile, { resetTurnstile } from "./Turnstile";
 
 export type Registration = {
   name: string;
@@ -41,6 +41,8 @@ export default function RegisterForm() {
   const [draftRestored, setDraftRestored] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
 
   useEffect(() => {
     const draft = loadJSON<Registration>(STORAGE_KEYS.draft);
@@ -71,8 +73,10 @@ export default function RegisterForm() {
 
   const valid = missing.length === 0 && turnstileToken.length > 0;
 
-  const onSubmit = () => {
-    if (!valid) return;
+  const onSubmit = async () => {
+    if (!valid || submitting) return;
+    setSubmitting(true);
+    setSubmitError("");
     const record: Registration = {
       name: form.name.trim(),
       studentId: form.studentId.trim(),
@@ -82,9 +86,37 @@ export default function RegisterForm() {
       skills: form.skills,
       submittedAt: new Date().toISOString(),
     };
-    saveJSON(STORAGE_KEYS.draft, record);
-    saveJSON(STORAGE_KEYS.registration, record);
-    setSubmitted(true);
+    try {
+      const res = await fetch("/api/register", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          name: record.name,
+          studentId: record.studentId,
+          college: record.college,
+          qq: record.qq,
+          mcId: record.mcId,
+          skills: record.skills,
+          turnstileToken,
+        }),
+      });
+      const data = (await res.json().catch(() => null)) as { ok?: boolean; message?: string } | null;
+      if (res.ok && data?.ok) {
+        saveJSON(STORAGE_KEYS.draft, record);
+        saveJSON(STORAGE_KEYS.registration, record);
+        setSubmitted(true);
+      } else {
+        setSubmitError(data?.message ?? `提交失败（${res.status}），请稍后重试`);
+        setTurnstileToken("");
+        resetTurnstile();
+      }
+    } catch {
+      setSubmitError("网络异常，请检查网络后重试");
+      setTurnstileToken("");
+      resetTurnstile();
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (submitted) {
@@ -93,11 +125,9 @@ export default function RegisterForm() {
         <img src="/img/items/golden_apple.png" alt="" width={56} height={56} className="pixel" />
         <h2>报名成功！</h2>
         <p>
-          欢迎加入 MC 联谊，<strong>{form.mcId}</strong>！
+          欢迎加入 MC 联谊，<strong>{form.mcId}</strong>！你的信息已进入活动名单。
         </p>
-        <p className="SuccessHint">
-          演示模式：后端未接入，数据仅保存在你的浏览器本地。
-        </p>
+        <p className="SuccessHint">本机也留有副本，组队页可识别你的报名状态。</p>
         <div className="SuccessActions">
           <a href="/lottery">
             <Button variant="primary">去随机组队</Button>
@@ -171,9 +201,11 @@ export default function RegisterForm() {
         />
       </div>
 
+      {submitError && <p className="SubmitError">{submitError}</p>}
+
       <div className="SubmitRow">
-        <Button variant="primary" disabled={!valid} onClick={onSubmit}>
-          提交报名
+        <Button variant="primary" disabled={!valid || submitting} onClick={onSubmit}>
+          {submitting ? "提交中…" : "提交报名"}
         </Button>
         <span className="SubmitHint">
           {missing.length > 0
