@@ -29,8 +29,14 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   if (!secret) return bad("服务端未配置 TURNSTILE_SECRET", 500);
 
   const upstreamUrl = (env.IMG_UPLOAD_URL ?? "").trim();
-  if (!/^https:\/\/[^\s/]+$/.test(upstreamUrl)) {
-    return bad("服务端未配置 IMG_UPLOAD_URL", 500);
+  if (!upstreamUrl) {
+    return bad("服务端未配置 IMG_UPLOAD_URL（值应为完整的图床接口地址）", 500);
+  }
+  if (!/^https:\/\/\S+$/.test(upstreamUrl)) {
+    return bad(
+      "IMG_UPLOAD_URL 配置不正确：值只能填接口地址本身（https:// 开头、不含空格与引号），不要带上变量名或等号",
+      500
+    );
   }
 
   const contentLength = Number(request.headers.get("content-length") ?? "0");
