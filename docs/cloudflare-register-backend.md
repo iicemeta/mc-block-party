@@ -25,6 +25,13 @@ D1 数据库 registrations 表
 | 变量 | 说明 |
 |---|---|
 | `TURNSTILE_HOSTNAMES` | 逗号分隔的来源域名白名单（如 `mc-block-party.pages.dev`）。**生产环境建议设置且不要包含 localhost**；不设置则跳过域名校验（token 本身已由 widget 注册域名约束） |
+| `IMG_UPLOAD_URL` | 晒图上传的图床接口完整地址（`functions/api/upload.ts` 依赖，**必配**；写在仪表盘环境变量里，不在仓库出现，避免暴露图床域名） |
+
+## 晒图上传后端（/api/upload）
+
+- 前端一次请求批量提交所有图片（`files` 多值字段 + `captions` 每张一句 + `turnstileToken`）
+- 服务端：Turnstile 校验（action=gallery）→ 单张 ≤5MB、单次 ≤20 张、仅图片类型 → 逐张转发图床 → 返回 `{ ok, results: [{ name, url }] }`
+- 图床域名不出现在前端与仓库；图片 URL 由上传结果返回给提交者（图片可访问必然包含域名，属预期）
 
 ## 数据表
 

@@ -4,19 +4,26 @@ import Turnstile, { resetTurnstile } from "./Turnstile";
 
 type Shot = {
   id: string;
+  file: File;
   name: string;
   url: string;
   caption: string;
 };
 
-const MAX_SIZE = 10 * 1024 * 1024;
+type UploadResult = { name: string; url: string };
+
+const MAX_SIZE = 5 * 1024 * 1024;
+const MAX_FILES = 20;
 
 export default function ScreenshotUploader() {
   const [shots, setShots] = useState<Shot[]>([]);
   const [notice, setNotice] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [results, setResults] = useState<UploadResult[]>([]);
   const [dragOver, setDragOver] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [submitError, setSubmitError] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const noticeTimer = useRef<number | null>(null);
 
@@ -35,16 +42,21 @@ export default function ScreenshotUploader() {
     if (!files) return;
     const accepted: Shot[] = [];
     for (const f of Array.from(files)) {
+      if (shots.length + accepted.length >= MAX_FILES) {
+        flash(`单次最多提交 ${MAX_FILES} 张图片`);
+        break;
+      }
       if (!f.type.startsWith("image/")) {
         flash(`已跳过非图片文件：${f.name}`);
         continue;
       }
       if (f.size > MAX_SIZE) {
-        flash(`已跳过超过 10MB 的文件：${f.name}`);
+        flash(`已跳过超过 5MB 的图片：${f.name}`);
         continue;
       }
       accepted.push({
         id: `${f.name}-${f.size}-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        file: f,
         name: f.name,
         url: URL.createObjectURL(f),
         caption: "",
@@ -53,6 +65,7 @@ export default function ScreenshotUploader() {
     if (accepted.length > 0) {
       setShots((prev) => [...prev, ...accepted]);
       setSubmitted(false);
+      setResults([]);
     }
   };
 
@@ -64,13 +77,65 @@ export default function ScreenshotUploader() {
     setShots((prev) => prev.map((s) => (s.id === id ? { ...s, caption } : s)));
   };
 
-  const onSubmit = () => {
-    if (shots.length === 0 || !turnstileToken) return;
-    setSubmitted(true);
-    setShots([]);
-    setTurnstileToken("");
-    resetTurnstile();
+  const onSubmit = async () => {
+    if (shots.length === 0 || !turnstileToken || uploading) return;
+    setUploading(true);
+    setSubmitError("");
+    try {
+      const fd = new FormData();
+      for (const s of shots) {
+        fd.append("files", s.file, s.name);
+        fd.append("captions", s.caption);
+      }
+      fd.append("turnstileToken", turnstileToken);
+      const res = await fetch("/api/upload", { method: "POST", body: fd });
+      const data = (await res.json().catch(() => null)) as
+        | { ok?: boolean; message?: string; results?: UploadResult[] }
+        | null;
+      if (res.ok && data?.ok && data.results) {
+        setResults(data.results);
+        setSubmitted(true);
+        setShots([]);
+        setTurnstileToken("");
+        resetTurnstile();
+      } else {
+        setSubmitError(data?.message ?? `提交失败（${res.status}），请稍后重试`);
+        setTurnstileToken("");
+        resetTurnstile();
+      }
+    } catch {
+      setSubmitError("网络异常，请检查网络后重试");
+      setTurnstileToken("");
+      resetTurnstile();
+    } finally {
+      setUploading(false);
+    }
   };
+
+  if (submitted && results.length > 0) {
+    return (
+      <div className="SuccessPanel mc-panel">
+        <img src="/img/items/ender_pearl.png" alt="" width={56} height={56} className="pixel" />
+        <h2>提交成功！</h2>
+        <p>已成功上传 {results.length} 张图片，链接如下（可分享到群里的摄影展）：</p>
+        <ul className="ResultList">
+          {results.map((r, i) => (
+            <li key={r.url}>
+              <span className="ResultIndex">#{i + 1}</span>
+              <a href={r.url} target="_blank" rel="noreferrer">
+                {r.url}
+              </a>
+            </li>
+          ))}
+        </ul>
+        <div className="SuccessActions">
+          <Button variant="primary" onClick={() => setSubmitted(false)}>
+            继续上传
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="Uploader">
@@ -89,7 +154,7 @@ export default function ScreenshotUploader() {
       >
         <img src="/img/items/ender_pearl.png" alt="" width={48} height={48} className="pixel" />
         <strong>把截图拖进这里</strong>
-        <span>或点击选择图片（可多选，单张不超过 10MB）</span>
+        <span>或点击选择图片（可多选，单张不超过 5MB）</span>
         <input
           ref={inputRef}
           type="file"
@@ -136,16 +201,17 @@ export default function ScreenshotUploader() {
         />
       </div>
 
+      {submitError && <p className="SubmitError">{submitError}</p>}
+
       <div className="SubmitRow">
         <Button
           variant="primary"
-          disabled={shots.length === 0 || !turnstileToken}
+          disabled={shots.length === 0 || !turnstileToken || uploading}
           onClick={onSubmit}
         >
-          提交 {shots.length > 0 ? `(${shots.length} 张)` : ""}
+          {uploading ? "上传中…" : `提交 ${shots.length > 0 ? `(${shots.length} 张)` : ""}`}
         </Button>
-        {submitted && <span className="SubmitOk">提交成功！（演示：后端未接入）</span>}
-        {!submitted && shots.length > 0 && !turnstileToken && (
+        {shots.length > 0 && !turnstileToken && !uploading && (
           <span className="SubmitPending">请先完成人机验证</span>
         )}
       </div>
