@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Button, Input } from "minecraft-react-ui";
+import Turnstile, { resetTurnstile } from "./Turnstile";
 
 type Shot = {
   id: string;
@@ -15,6 +16,7 @@ export default function ScreenshotUploader() {
   const [notice, setNotice] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const noticeTimer = useRef<number | null>(null);
 
@@ -63,9 +65,11 @@ export default function ScreenshotUploader() {
   };
 
   const onSubmit = () => {
-    if (shots.length === 0) return;
+    if (shots.length === 0 || !turnstileToken) return;
     setSubmitted(true);
     setShots([]);
+    setTurnstileToken("");
+    resetTurnstile();
   };
 
   return (
@@ -124,11 +128,26 @@ export default function ScreenshotUploader() {
         </div>
       )}
 
+      <div className="TurnstileRow">
+        <Turnstile
+          action="gallery"
+          onVerify={setTurnstileToken}
+          onExpire={() => setTurnstileToken("")}
+        />
+      </div>
+
       <div className="SubmitRow">
-        <Button variant="primary" disabled={shots.length === 0} onClick={onSubmit}>
+        <Button
+          variant="primary"
+          disabled={shots.length === 0 || !turnstileToken}
+          onClick={onSubmit}
+        >
           提交 {shots.length > 0 ? `(${shots.length} 张)` : ""}
         </Button>
         {submitted && <span className="SubmitOk">提交成功！（演示：后端未接入）</span>}
+        {!submitted && shots.length > 0 && !turnstileToken && (
+          <span className="SubmitPending">请先完成人机验证</span>
+        )}
       </div>
     </div>
   );

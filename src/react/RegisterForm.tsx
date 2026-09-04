@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Button, CheckboxGroup, Input, Tag } from "minecraft-react-ui";
 import { STORAGE_KEYS, loadJSON, saveJSON } from "../lib/storage";
+import Turnstile from "./Turnstile";
 
 export type Registration = {
   name: string;
@@ -39,6 +40,7 @@ export default function RegisterForm() {
   const [form, setForm] = useState<Registration>(EMPTY);
   const [draftRestored, setDraftRestored] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState("");
 
   useEffect(() => {
     const draft = loadJSON<Registration>(STORAGE_KEYS.draft);
@@ -67,7 +69,7 @@ export default function RegisterForm() {
     return need;
   }, [form]);
 
-  const valid = missing.length === 0;
+  const valid = missing.length === 0 && turnstileToken.length > 0;
 
   const onSubmit = () => {
     if (!valid) return;
@@ -161,12 +163,24 @@ export default function RegisterForm() {
         />
       </div>
 
+      <div className="TurnstileRow">
+        <Turnstile
+          action="register"
+          onVerify={setTurnstileToken}
+          onExpire={() => setTurnstileToken("")}
+        />
+      </div>
+
       <div className="SubmitRow">
         <Button variant="primary" disabled={!valid} onClick={onSubmit}>
           提交报名
         </Button>
         <span className="SubmitHint">
-          {valid ? "信息已就绪，点击提交！" : `还差：${missing.join("、")}`}
+          {missing.length > 0
+            ? `还差：${missing.join("、")}`
+            : turnstileToken
+              ? "信息已就绪，点击提交！"
+              : "请先完成上方人机验证"}
         </span>
       </div>
     </div>

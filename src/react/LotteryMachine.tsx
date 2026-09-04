@@ -3,6 +3,7 @@ import { Button, Input, Tag } from "minecraft-react-ui";
 import { assignTeams, mulberry32, type Team } from "../lib/shuffle";
 import { MOCK_PARTICIPANTS } from "../lib/mockParticipants";
 import { STORAGE_KEYS, loadJSON } from "../lib/storage";
+import Turnstile, { resetTurnstile } from "./Turnstile";
 import shuffleSrc from "../lib/shuffle.ts?raw";
 
 type Phase = "idle" | "rolling" | "boom" | "done";
@@ -22,6 +23,7 @@ export default function LotteryMachine() {
   const [teams, setTeams] = useState<Team[]>([]);
   const [error, setError] = useState("");
   const [myId, setMyId] = useState("");
+  const [turnstileToken, setTurnstileToken] = useState("");
 
   const slotTimer = useRef<number | null>(null);
   const stageTimer = useRef<number | null>(null);
@@ -69,6 +71,7 @@ export default function LotteryMachine() {
   };
 
   const start = () => {
+    if (!turnstileToken) return;
     if (teamSize < 1 || !Number.isInteger(teamSize)) {
       setError("每组人数必须是正整数");
       return;
@@ -77,11 +80,14 @@ export default function LotteryMachine() {
       setError(`总人数至少 ${teamSize} 人才能成队`);
       return;
     }
+    setTurnstileToken("");
+    resetTurnstile();
     run(Math.floor(Math.random() * 2 ** 31));
   };
 
   const rolling = phase === "rolling";
   const boom = phase === "boom";
+  const needVerify = !rolling && !boom && !turnstileToken;
 
   return (
     <div className={boom ? "Lottery shaking" : "Lottery"}>
@@ -105,11 +111,12 @@ export default function LotteryMachine() {
         <Button
           variant="primary"
           onClick={start}
-          disabled={rolling || boom}
+          disabled={rolling || boom || !turnstileToken}
           className="StartBtn"
         >
           {phase === "done" ? "重新抽取" : "开始抽取"}
         </Button>
+        {needVerify && <span className="VerifyHint">完成人机验证后可抽取</span>}
         {phase === "done" && seed !== null && (
           <Button variant="secondary" onClick={() => run(seed)}>
             同种子重抽（种子 {seed}）
@@ -127,6 +134,14 @@ export default function LotteryMachine() {
           <Tag className="ErrorTag">出错了</Tag> {error}
         </p>
       )}
+
+      <div className="TurnstileRow">
+        <Turnstile
+          action="lottery"
+          onVerify={setTurnstileToken}
+          onExpire={() => setTurnstileToken("")}
+        />
+      </div>
 
       <div className="Machine mc-panel">
         <div className="Slot">{rolling ? slotName : phase === "idle" ? "等待开始…" : "TNT!"}</div>

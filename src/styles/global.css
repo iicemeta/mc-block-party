@@ -135,6 +135,25 @@ img.pixel {
   background: repeating-linear-gradient(90deg, #7fe62c 0 8px, #5fbf1a 8px 16px);
 }
 
+.TurnstileRow {
+  margin: 18px 0 4px;
+}
+
+.TurnstileHolder {
+  min-height: 65px;
+}
+
+.TurnstileFailed {
+  color: #ff8383;
+  font-size: 0.9rem;
+}
+
+.VerifyHint,
+.SubmitPending {
+  font-size: 0.85rem;
+  opacity: 0.7;
+}
+
 @keyframes floatY {
   0%,
   100% {
