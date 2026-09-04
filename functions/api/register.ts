@@ -137,7 +137,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     try {
       await db.prepare(
         `CREATE TABLE IF NOT EXISTS registrations (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          id INTEGER PRIMARY KEY,
           name TEXT NOT NULL,
           student_id TEXT NOT NULL UNIQUE,
           college TEXT NOT NULL,
