@@ -9,7 +9,7 @@ const year = new Date().getFullYear();
     <span class="club coal">山商煤炭社</span>
   </div>
   <p>MC 联谊活动 · {year}</p>
-  <p class="Footer-team">开发团队：MyGO!!!!!</p>
+  <p class="Footer-team">开发团队：<span class="TeamName">MyGO!!!!!</span></p>
 </footer>
 
 <style>
@@ -46,5 +46,10 @@ const year = new Date().getFullYear();
 
   .Footer p.Footer-team {
     margin-top: 6px;
+  }
+
+  /* 浅青色：在 #0c0c10 深色页脚上对比度足够，且比纯 cyan (#00ffff) 柔和 */
+  .Footer .TeamName {
+    color: #7de8ff;
   }
 </style>
