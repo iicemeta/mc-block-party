@@ -13,17 +13,22 @@ export default function ShowcaseGallery() {
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/showcase")
-      .then((r) => r.json())
-      .then((d: { ok?: boolean; entries?: Entry[] }) => {
-        if (cancelled) return;
-        setEntries(d?.entries ?? []);
-      })
-      .catch(() => {
-        if (!cancelled) setError("风采数据加载失败，请稍后刷新重试");
-      });
+    const load = () => {
+      fetch("/api/showcase")
+        .then((r) => r.json())
+        .then((d: { ok?: boolean; entries?: Entry[] }) => {
+          if (cancelled) return;
+          setEntries(d?.entries ?? []);
+        })
+        .catch(() => {
+          if (!cancelled) setError("风采数据加载失败，请稍后刷新重试");
+        });
+    };
+    load();
+    window.addEventListener("showcase:refresh", load);
     return () => {
       cancelled = true;
+      window.removeEventListener("showcase:refresh", load);
     };
   }, []);
 

@@ -1,6 +1,7 @@
 export const STORAGE_KEYS = {
   draft: "mc-event:registration-draft",
   registration: "mc-event:registration",
+  showcaseUuid: "mc-event:showcase-uuid",
 } as const;
 
 function backend(): Storage | null {

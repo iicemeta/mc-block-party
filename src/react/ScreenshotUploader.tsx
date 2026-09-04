@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Button, Input } from "minecraft-react-ui";
 import Turnstile, { resetTurnstile } from "./Turnstile";
+import { STORAGE_KEYS, loadJSON, saveJSON } from "../lib/storage";
 
 type Shot = {
   id: string;
@@ -28,6 +29,18 @@ export default function ScreenshotUploader() {
   const [uuidInput, setUuidInput] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const noticeTimer = useRef<number | null>(null);
+
+  useEffect(() => {
+    const saved = loadJSON<string>(STORAGE_KEYS.showcaseUuid);
+    if (saved && UUID_RE.test(saved)) {
+      setUuidInput(saved);
+      return;
+    }
+    const record = loadJSON<{ uuid?: string }>(STORAGE_KEYS.registration);
+    if (record?.uuid && UUID_RE.test(record.uuid)) {
+      setUuidInput(record.uuid);
+    }
+  }, []);
 
   useEffect(() => {
     const urls = shots.map((s) => s.url);
@@ -110,6 +123,8 @@ export default function ScreenshotUploader() {
         setShots([]);
         setTurnstileToken("");
         resetTurnstile();
+        saveJSON(STORAGE_KEYS.showcaseUuid, uuid);
+        window.dispatchEvent(new CustomEvent("showcase:refresh"));
       } else {
         setSubmitError(data?.message ?? `提交失败（${res.status}），请稍后重试`);
         setTurnstileToken("");
