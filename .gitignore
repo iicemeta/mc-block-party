@@ -24,4 +24,7 @@ pnpm-debug.log*
 # jetbrains setting folder
 .idea/
 
+# wrangler local artifacts
+.wrangler/
+
 /docs/oproj
