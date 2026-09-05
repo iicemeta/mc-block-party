@@ -42,7 +42,7 @@ export function popReturnTo(): string {
   } catch {
     /* 忽略 */
   }
-  return "/register";
+  return "/me";
 }
 
 /**

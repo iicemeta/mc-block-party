@@ -3,7 +3,7 @@ import { useEffect, type ReactNode } from "react";
 import { authConfig, LOCALE, ORG_SLUG, shouldAttemptLoginRedirect } from "../lib/auth";
 
 type AuthGateProps = {
-  /** true：未登录时自动跳转登录（登记处/晒图）；false：未登录也渲染内容（随机组队） */
+  /** true：未登录时自动跳转登录（个人主页/晒图）；false：未登录也渲染内容（随机组队） */
   enforce?: boolean;
   children: ReactNode;
 };

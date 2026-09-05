@@ -54,7 +54,7 @@ export default function RegisterForm() {
 }
 
 function RegisterFormInner() {
-  const { acquireToken } = useAuth();
+  const { acquireToken, account } = useAuth();
   const [mode, setMode] = useState<Mode>("loading");
   const [form, setForm] = useState<Registration>(EMPTY);
   const [draftRestored, setDraftRestored] = useState(false);
@@ -211,7 +211,7 @@ function RegisterFormInner() {
             <Button variant="primary">去随机组队</Button>
           </a>
           <Button variant="secondary" onClick={() => setSubmitted(false)}>
-            返回登记处
+            查看我的信息
           </Button>
         </div>
       </div>
@@ -224,6 +224,7 @@ function RegisterFormInner() {
   return (
     <div className="RegisterForm">
       <div className="FormMeta">
+        {account?.email && <Tag>当前账号：{account.email}</Tag>}
         {mode === "view" && <Tag className="Tag_success">查看模式：信息只读</Tag>}
         {mode === "edit" && <Tag className="Tag_success">修改模式：提交将更新原报名</Tag>}
         {mode === "new" && <Tag>提交后将自动绑定当前登录账号</Tag>}

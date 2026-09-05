@@ -51,10 +51,10 @@ export default function AuthStatus() {
     <div className="AuthStatus">
       {account ? (
         <>
-          <span className="AuthUser" title={account.email ?? ""}>
+          <a className="AuthUser" href="/me" title="进入个人主页">
             <img src="/img/items/diamond.png" alt="" width={20} height={20} className="pixel" />
             {displayName}
-          </span>
+          </a>
           <button type="button" className="AuthBtn" onClick={() => void handleLogout()}>
             退出
           </button>

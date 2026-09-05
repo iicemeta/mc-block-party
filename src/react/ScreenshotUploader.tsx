@@ -178,7 +178,7 @@ function ScreenshotUploaderInner() {
       <div className="AuthLoading mc-panel">
         <img src="/img/items/diamond.png" alt="" width={40} height={40} className="pixel" />
         <h2>还没有报名哦</h2>
-        <p>晒图前请先到<a href="/register">登记处</a>完成报名，提交后即可回来分享你的截图。</p>
+        <p>晒图前请先到<a href="/me">个人主页</a>完成报名，提交后即可回来分享你的截图。</p>
       </div>
     );
   }
