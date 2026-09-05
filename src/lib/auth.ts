@@ -22,6 +22,24 @@ export const postLogoutRedirectUri = `${trimSlash(
 const RETURN_TO_KEY = "mc-event:auth:returnTo";
 const LOGIN_ATTEMPT_KEY = "mc-event:auth:lastLoginRedirect";
 const ADMIN_CACHE_KEY = "mc-event:auth:adminRole";
+const SYNCED_EMAIL_KEY = "mc-event:auth:syncedEmail";
+
+/** 本次浏览器会话内是否已为该邮箱做过登录档案同步 */
+export function getSyncedEmail(): string {
+  try {
+    return window.sessionStorage.getItem(SYNCED_EMAIL_KEY) ?? "";
+  } catch {
+    return "";
+  }
+}
+
+export function setSyncedEmail(email: string): void {
+  try {
+    window.sessionStorage.setItem(SYNCED_EMAIL_KEY, email.toLowerCase());
+  } catch {
+    /* 忽略 */
+  }
+}
 
 export type CachedAdminRole = "super" | "admin" | "no";
 
@@ -55,6 +73,7 @@ export function setCachedAdminRole(email: string, role: CachedAdminRole): void {
 export function clearCachedAdminRole(): void {
   try {
     window.sessionStorage.removeItem(ADMIN_CACHE_KEY);
+    window.sessionStorage.removeItem(SYNCED_EMAIL_KEY);
   } catch {
     /* 忽略 */
   }

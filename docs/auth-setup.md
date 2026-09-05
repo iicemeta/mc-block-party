@@ -83,6 +83,15 @@ Turnstile 相关变量（`TURNSTILE_SECRET`、`TURNSTILE_HOSTNAMES`）已不再�
 - 名单导出为 CSV（带 BOM，Excel 直接打开中文不乱码；含公式注入防护）
 - 管理员列表存于 D1 `admins` 表，函数首次访问自动建表
 
+**登录用户档案（`users` 表，自动维护）：**
+
+- 用户登录后，前端每浏览器会话静默调用一次 `POST /api/user/sync`，
+  服务端从 melody auth userinfo 取**可信**邮箱与昵称写入 `users` 表
+  （`auth_id` 主键、`email`、`nickname`、`created_at`、`last_seen_at`）
+- 昵称口径与导航栏按钮一致（`firstName` 优先，回退邮箱）；同一请求顺带返回管理员角色，
+  驱动导航栏「管理」入口的显示
+- 表结构由函数自动创建，无需手工迁移；该表同时充当"注册用户名单"，可在 D1 Console 查询
+
 ## 四、数据库迁移（自动，无需手工操作）
 
 `registrations` 表新增 `auth_id` 列（melody auth 用户 ID，UNIQUE）。

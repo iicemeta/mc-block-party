@@ -4,12 +4,14 @@ import {
   authConfig,
   clearCachedAdminRole,
   getCachedAdminRole,
+  getSyncedEmail,
   LOCALE,
   ORG_SLUG,
   postLogoutRedirectUri,
   readAccount,
   readRefreshToken,
   setCachedAdminRole,
+  setSyncedEmail,
   stashReturnTo,
   type CachedAdminRole,
 } from "../lib/auth";
@@ -18,8 +20,10 @@ import { exchangeTokenByRefreshToken } from "@melody-auth/web";
 export default function AuthStatus() {
   const [account, setAccount] = useState<ReturnType<typeof readAccount>>(null);
   const [adminRole, setAdminRole] = useState<CachedAdminRole>("no");
+  const [onAdminPage, setOnAdminPage] = useState(false);
 
   useEffect(() => {
+    setOnAdminPage(window.location.pathname.startsWith("/admin"));
     const acc = readAccount();
     setAccount(acc);
     const email = acc?.email ?? "";
@@ -27,11 +31,11 @@ export default function AuthStatus() {
       setAdminRole("no");
       return;
     }
-    // 管理员识别结果按邮箱缓存：每个浏览器会话最多向后端确认一次
-    const cached = getCachedAdminRole(email);
-    if (cached) {
-      setAdminRole(cached);
-      return;
+    // 同步与管理员识别结果均按邮箱缓存：每个浏览器会话最多向后端请求一次
+    const cachedRole = getCachedAdminRole(email);
+    if (cachedRole) {
+      setAdminRole(cachedRole);
+      if (getSyncedEmail() === email) return;
     }
     let cancelled = false;
     const check = async () => {
@@ -43,18 +47,20 @@ export default function AuthStatus() {
           accessToken = res.accessToken;
         }
         if (!accessToken || cancelled) return;
-        const api = await fetch("/api/admin/status", {
+        const api = await fetch("/api/user/sync", {
+          method: "POST",
           headers: { authorization: `Bearer ${accessToken}` },
         });
         const body = (await api.json().catch(() => null)) as
           | { ok?: boolean; admin?: boolean; role?: "super" | "admin" | null }
           | null;
         if (cancelled || !api.ok || !body?.ok) return;
+        setSyncedEmail(email);
         const role: CachedAdminRole = body.admin && body.role ? body.role : "no";
         setCachedAdminRole(email, role);
         setAdminRole(role);
       } catch {
-        /* 查询失败按非管理员处理，下次加载再试 */
+        /* 失败按非管理员处理，下次加载再试 */
       }
     };
     void check();
@@ -102,11 +108,7 @@ export default function AuthStatus() {
             {displayName}
           </a>
           {adminRole !== "no" && (
-            <a
-              className="Navbar-link"
-              href="/admin"
-              title="管理控制台"
-            >
+            <a className={"Navbar-link" + (onAdminPage ? " current" : "")} href="/admin" title="管理控制台">
               <img src="/img/items/redstone_block.png" alt="" width={20} height={20} className="pixel" />
               管理
             </a>
