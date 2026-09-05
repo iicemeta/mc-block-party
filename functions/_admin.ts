@@ -5,8 +5,6 @@ import { resolveD1 } from "./_lib";
 
 export type AdminEnv = AuthEnv & {
   SUPER_ADMIN_EMAIL?: string;
-  MCAUTH_S2S_CLIENT_ID?: string;
-  MCAUTH_S2S_CLIENT_SECRET?: string;
 };
 
 export type AdminRole = "super" | "admin";
@@ -55,79 +53,6 @@ export async function fetchUserInfo(env: AdminEnv, accessToken: string): Promise
     };
   } catch {
     return null;
-  }
-}
-
-// S2S access token 在 isolate 生命周期内缓存（提前 60s 视为过期）
-let s2sToken: { value: string; expiresOn: number } | null = null;
-
-async function getS2SToken(env: AdminEnv): Promise<string | null> {
-  const clientId = (env.MCAUTH_S2S_CLIENT_ID ?? "").trim();
-  const clientSecret = (env.MCAUTH_S2S_CLIENT_SECRET ?? "").trim();
-  const serverUri = (env.MCAUTH_SERVER_URI ?? "").replace(/\/+$/, "");
-  if (!clientId || !clientSecret || !serverUri) return null;
-
-  if (s2sToken && s2sToken.expiresOn > Date.now() / 1000 + 60) {
-    return s2sToken.value;
-  }
-
-  try {
-    const body = new URLSearchParams({
-      grant_type: "client_credentials",
-      scope: "read_user",
-    });
-    const basic = btoa(`${clientId}:${clientSecret}`);
-    const res = await fetch(`${serverUri}/oauth2/v1/token`, {
-      method: "POST",
-      headers: {
-        "content-type": "application/x-www-form-urlencoded",
-        authorization: `basic ${basic}`,
-      },
-      body,
-      signal: AbortSignal.timeout(10_000),
-    });
-    if (!res.ok) return null;
-    const data = (await res.json()) as { access_token?: string; expires_on?: number };
-    if (!data?.access_token) return null;
-    s2sToken = {
-      value: data.access_token,
-      expiresOn: data.expires_on ?? Date.now() / 1000 + 3600,
-    };
-    return s2sToken.value;
-  } catch {
-    return null;
-  }
-}
-
-/** 通过 S2S API 把邮箱解析为 melody auth 用户 authId（要求该邮箱已在 auth 服务注册） */
-export async function lookupAuthIdByEmail(
-  env: AdminEnv,
-  email: string
-): Promise<{ authId: string } | { error: string }> {
-  const token = await getS2SToken(env);
-  if (!token) {
-    return { error: "服务端未配置 S2S 凭据（MCAUTH_S2S_CLIENT_ID / MCAUTH_S2S_CLIENT_SECRET）" };
-  }
-  const serverUri = (env.MCAUTH_SERVER_URI ?? "").replace(/\/+$/, "");
-  try {
-    const url =
-      `${serverUri}/api/v1/users?search=${encodeURIComponent(email)}` +
-      `&page_size=20&page_number=1`;
-    const res = await fetch(url, {
-      headers: { authorization: `Bearer ${token}` },
-      signal: AbortSignal.timeout(10_000),
-    });
-    if (!res.ok) return { error: `查询用户失败（${res.status}）` };
-    const data = (await res.json()) as {
-      users?: { authId?: string; email?: string | null }[];
-    };
-    const target = (data.users ?? []).find(
-      (u) => (u.email ?? "").trim().toLowerCase() === email.toLowerCase()
-    );
-    if (!target?.authId) return { error: "该邮箱尚未在登录系统中注册，请让对方先注册登录后再添加" };
-    return { authId: target.authId };
-  } catch {
-    return { error: "查询用户失败，请稍后重试" };
   }
 }
 

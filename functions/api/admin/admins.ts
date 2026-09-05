@@ -1,9 +1,5 @@
 /// <reference types="@cloudflare/workers-types" />
-import {
-  lookupAuthIdByEmail,
-  requireAdmin,
-  type AdminEnv,
-} from "../../_admin";
+import { requireAdmin, type AdminEnv } from "../../_admin";
 import { errMsg, resolveD1 } from "../../_lib";
 
 export type Env = AdminEnv & Record<string, unknown>;
@@ -47,11 +43,27 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   const db = resolveD1(env);
   if (!db) return json({ ok: false, message: "数据库绑定不可用" }, 500);
 
-  const lookup = await lookupAuthIdByEmail(env, email);
-  if ("error" in lookup) {
-    return json({ ok: false, message: lookup.error }, lookup.error.includes("注册") ? 404 : 502);
+  // 以本站 users 表为准：只有登录过本站的用户才可能被设置为管理员
+  let authId: string;
+  try {
+    const user = await db
+      .prepare("SELECT auth_id FROM users WHERE lower(email) = ?1")
+      .bind(email)
+      .first<{ auth_id: string }>();
+    if (!user) {
+      return json(
+        {
+          ok: false,
+          message: "该邮箱还未登录过本站：请让对方先访问本站并登录一次，之后再来添加",
+        },
+        404
+      );
+    }
+    authId = user.auth_id;
+  } catch (e) {
+    console.error("admin add d1 error", e);
+    return json({ ok: false, message: `数据库查询失败：${errMsg(e)}` }, 500);
   }
-  const { authId } = lookup;
 
   try {
     const existing = await db

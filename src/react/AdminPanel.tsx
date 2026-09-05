@@ -168,7 +168,7 @@ function AdminPanelInner() {
       <div className="AuthLoading mc-panel">
         <img src="/img/items/redstone_block.png" alt="" width={40} height={40} className="pixel" />
         <h2>无访问权限</h2>
-        <p>管理控制台仅对活动管理员开放。如需权限，请联系超级管理员添加你的账号邮箱。</p>
+        <p>管理控制台仅对活动管理员开放。如需权限，请先登录本站一次，再联系超级管理员添加你的账号邮箱。</p>
         <p>
           <a href="/me">返回个人主页</a>
         </p>
@@ -215,7 +215,7 @@ function AdminPanelInner() {
 
       {isSuper && (
         <div className="ModifyRow">
-          <span>添加管理员（对方需已在登录系统注册）：</span>
+          <span>添加管理员（对方需已登录过本站）：</span>
           <Input
             value={newEmail}
             onChange={setNewEmail}

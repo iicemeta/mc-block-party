@@ -45,8 +45,6 @@ PUBLIC_SITE_URI=http://localhost:4321
 | `MCAUTH_SERVER_URI` | 运行时（Functions 验签用） | 与 `PUBLIC_MCAUTH_SERVER_URI` 相同 |
 | `MCAUTH_CLIENT_ID` | 运行时（Functions 验签用） | 与 `PUBLIC_MCAUTH_CLIENT_ID` 相同 |
 | `SUPER_ADMIN_EMAIL` | 运行时（管理面板用） | 超级管理员邮箱；该邮箱的账号首次访问 `/admin` 时自动晋升为超级管理员 |
-| `MCAUTH_S2S_CLIENT_ID` | 运行时（管理面板用） | S2S 应用 Client ID（按邮箱添加管理员时解析用户用） |
-| `MCAUTH_S2S_CLIENT_SECRET` | 运行时（管理面板用） | S2S 应用 Client Secret（保密） |
 
 > `PUBLIC_*` 在构建时打进前端 bundle，属于公开信息（SPA 的标准形态）；
 > 配置后需要**重新触发一次部署**才会生效。
@@ -70,15 +68,14 @@ Turnstile 相关变量（`TURNSTILE_SECRET`、`TURNSTILE_HOSTNAMES`）已不再�
 
 **配置步骤（一次性）：**
 
-1. melody auth Admin Panel → Apps → 再创建一个应用，Type 选 **S2S**（client credentials），
-   scope 至少 `read_user`，记录 Client ID 和 Client Secret
-2. Pages 环境变量配置 `SUPER_ADMIN_EMAIL`、`MCAUTH_S2S_CLIENT_ID`、`MCAUTH_S2S_CLIENT_SECRET`
-3. 用超级管理员邮箱注册/登录站点 → 访问 `/admin` → 首次访问自动晋升为超级管理员
-4. 在控制台输入其他同学（需已注册）的邮箱，即可添加为管理员
+1. Pages 环境变量配置 `SUPER_ADMIN_EMAIL`
+2. 用超级管理员邮箱注册/登录站点 → 访问 `/admin` → 首次访问自动晋升为超级管理员
+3. 在控制台输入对方邮箱即可添加为管理员。**前提：对方已登录过本站**
+   （管理面板只从本站 `users` 表查找用户——登录过本站才会留档；不依赖认证系统的任何管理 API，也无需 S2S 应用）
 
 **说明：**
 
-- 添加管理员时通过 melody auth S2S API 把邮箱解析为用户 ID，因此对方必须先完成注册
+- 添加管理员直接使用本站留档的 `auth_id`（`users` 表），无法伪造
 - 管理员身份判定走服务端（JWT 验签 + userinfo 取邮箱），无法伪造
 - 名单导出为 CSV（带 BOM，Excel 直接打开中文不乱码；含公式注入防护）
 - 管理员列表存于 D1 `admins` 表，函数首次访问自动建表
