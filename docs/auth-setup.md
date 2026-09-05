@@ -44,6 +44,9 @@ PUBLIC_SITE_URI=http://localhost:4321
 | `PUBLIC_SITE_URI` | 构建时（redirect/postLogout 基址） | 生产为 `https://<你的域名>`，结尾不带斜杠 |
 | `MCAUTH_SERVER_URI` | 运行时（Functions 验签用） | 与 `PUBLIC_MCAUTH_SERVER_URI` 相同 |
 | `MCAUTH_CLIENT_ID` | 运行时（Functions 验签用） | 与 `PUBLIC_MCAUTH_CLIENT_ID` 相同 |
+| `SUPER_ADMIN_EMAIL` | 运行时（管理面板用） | 超级管理员邮箱；该邮箱的账号首次访问 `/admin` 时自动晋升为超级管理员 |
+| `MCAUTH_S2S_CLIENT_ID` | 运行时（管理面板用） | S2S 应用 Client ID（按邮箱添加管理员时解析用户用） |
+| `MCAUTH_S2S_CLIENT_SECRET` | 运行时（管理面板用） | S2S 应用 Client Secret（保密） |
 
 > `PUBLIC_*` 在构建时打进前端 bundle，属于公开信息（SPA 的标准形态）；
 > 配置后需要**重新触发一次部署**才会生效。
@@ -53,7 +56,34 @@ PUBLIC_SITE_URI=http://localhost:4321
 Turnstile 相关变量（`TURNSTILE_SECRET`、`TURNSTILE_HOSTNAMES`）已不再使用，
 可从 Pages 环境变量中删除。`IMG_UPLOAD_URL` 晒图图床变量**继续保留**。
 
-## 三、数据库迁移（自动，无需手工操作）
+## 三、管理控制台（/admin）
+
+入口：登录后导航栏自动出现「管理」按钮（仅管理员可见，普通用户看不到；识别结果按浏览器会话缓存）。
+即使直接访问 `/admin`，非管理员也只会看到无权限页——权限判定全部在服务端。
+
+**角色与权限：**
+
+| 角色 | 权限 | 来源 |
+|---|---|---|
+| 超级管理员（1 名） | 查看统计、导出名单、添加/移除管理员 | 环境变量 `SUPER_ADMIN_EMAIL` 指定的邮箱 |
+| 管理员（多名） | 查看统计、导出名单、查看管理员列表 | 超级管理员在控制台按邮箱添加 |
+
+**配置步骤（一次性）：**
+
+1. melody auth Admin Panel → Apps → 再创建一个应用，Type 选 **S2S**（client credentials），
+   scope 至少 `read_user`，记录 Client ID 和 Client Secret
+2. Pages 环境变量配置 `SUPER_ADMIN_EMAIL`、`MCAUTH_S2S_CLIENT_ID`、`MCAUTH_S2S_CLIENT_SECRET`
+3. 用超级管理员邮箱注册/登录站点 → 访问 `/admin` → 首次访问自动晋升为超级管理员
+4. 在控制台输入其他同学（需已注册）的邮箱，即可添加为管理员
+
+**说明：**
+
+- 添加管理员时通过 melody auth S2S API 把邮箱解析为用户 ID，因此对方必须先完成注册
+- 管理员身份判定走服务端（JWT 验签 + userinfo 取邮箱），无法伪造
+- 名单导出为 CSV（带 BOM，Excel 直接打开中文不乱码；含公式注入防护）
+- 管理员列表存于 D1 `admins` 表，函数首次访问自动建表
+
+## 四、数据库迁移（自动，无需手工操作）
 
 `registrations` 表新增 `auth_id` 列（melody auth 用户 ID，UNIQUE）。
 Functions 在首次写入时会自动：
@@ -65,7 +95,7 @@ Functions 在首次写入时会自动：
 老用户下次提交报名时，若学号已存在且从未绑定账号，会**自动认领绑定**，
 无需任何数据迁移脚本。`d1/schema.sql` 已同步更新，可用于全新环境初始化。
 
-## 四、部署
+## 五、部署
 
 ```bash
 npm run build          # 本地确认构建通过
@@ -74,7 +104,7 @@ npm run pagesdeploy    # 部署 dist + functions/ 到 Cloudflare Pages
 
 Git 集成模式下推送 `feat.auth` 分支合并到 `main` 即自动部署。
 
-## 五、部署后验证
+## 六、部署后验证
 
 1. 打开 `https://<你的域名>/me`（个人主页），应自动跳转到 melody auth 登录页（mc-party 品牌）
 2. 注册新账号（邮箱验证码）→ 登录成功回跳个人主页 → 填写表单提交 → 显示「报名成功」
@@ -88,7 +118,7 @@ Git 集成模式下推送 `feat.auth` 分支合并到 `main` 即自动部署。
    # 预期 401 {"ok":false,"code":"unauthorized",...}
    ```
 
-## 六、工作原理速查
+## 七、工作原理速查
 
 ```
 登录：任意页「登录 / 注册」→ triggerLogin(org=mc-party)
@@ -101,7 +131,7 @@ Git 集成模式下推送 `feat.auth` 分支合并到 `main` 即自动部署。
 绑定：一人一账号一条报名（auth_id 唯一）；学号唯一；学号被其他账号绑定返回 409
 ```
 
-## 七、常见问题
+## 八、常见问题
 
 - **登录后页面一直「正在前往登录页」**：检查 Pages 构建变量
   `PUBLIC_MCAUTH_*` 是否已配置并重新部署；本地检查 `.env`。

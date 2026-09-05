@@ -19,7 +19,7 @@ export const unauthorized = (message = "登录状态无效或已过期，请重�
 let remoteJwks: ReturnType<typeof createRemoteJWKSet> | null = null;
 let jwksUri = "";
 
-export type AuthResult = { authId: string } | { error: Response };
+export type AuthResult = { authId: string; token: string } | { error: Response };
 
 /**
  * 校验 Authorization: Bearer <accessToken>（melody auth 签发的 RS256 JWT）。
@@ -53,7 +53,7 @@ export async function requireAuth(
     if (payload.azp !== clientId) throw new Error("azp mismatch");
     const authId = typeof payload.sub === "string" ? payload.sub : "";
     if (!authId) throw new Error("missing sub");
-    return { authId };
+    return { authId, token };
   } catch (e) {
     console.error("auth verify failed", e instanceof Error ? e.message : e);
     return { error: unauthorized() };

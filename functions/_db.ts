@@ -30,3 +30,15 @@ export async function ensureRegistrationsSchema(db: D1Database): Promise<void> {
   }
   await db.prepare(AUTH_ID_INDEX_DDL).run();
 }
+
+const ADMINS_CREATE_DDL = `CREATE TABLE IF NOT EXISTS admins (
+  auth_id TEXT PRIMARY KEY,
+  email TEXT NOT NULL,
+  role TEXT NOT NULL DEFAULT 'admin',
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+)`;
+
+/** 幂等确保 admins 表结构可用 */
+export async function ensureAdminsSchema(db: D1Database): Promise<void> {
+  await db.prepare(ADMINS_CREATE_DDL).run();
+}
