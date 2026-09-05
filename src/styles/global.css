@@ -137,6 +137,64 @@ img.pixel {
 
 /* ---- 登录认证（melody auth）---- */
 
+/* ---- 音效选择弹窗 ---- */
+
+.SoundPrompt {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(2px);
+}
+
+.SoundPrompt-panel {
+  max-width: 380px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+  padding: 30px 26px;
+  animation: popIn 0.3s ease-out;
+}
+
+.SoundPrompt-panel h2 {
+  margin: 4px 0 0;
+  letter-spacing: 2px;
+}
+
+.SoundPrompt-panel p {
+  margin: 0;
+  font-size: 0.9rem;
+  opacity: 0.85;
+  line-height: 1.8;
+}
+
+.SoundPrompt-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 8px;
+}
+
+.SoundOn {
+  background-color: var(--primary-color);
+}
+
+.SoundOn:hover {
+  background-color: var(--accent-color) !important;
+}
+
+.SoundPrompt-panel small {
+  opacity: 0.6;
+  font-size: 0.75rem;
+}
+
 .AuthLoading {
   max-width: 560px;
   margin: 0 auto;
