@@ -6,7 +6,8 @@
   ],
   "exclude": [
     "dist",
-    "functions"
+    "functions",
+    "docs/oproj"
   ],
   "compilerOptions": {
     "jsx": "react-jsx",

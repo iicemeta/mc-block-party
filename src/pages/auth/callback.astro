@@ -1,0 +1,17 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import AuthCallback from "../../react/AuthCallback";
+---
+
+<Layout title="登录处理中 · MC 联谊嘉年华">
+  <div class="CallbackWrap">
+    <AuthCallback client:load />
+  </div>
+</Layout>
+
+<style>
+  .CallbackWrap {
+    max-width: 480px;
+    margin: 8vh auto 0;
+  }
+</style>

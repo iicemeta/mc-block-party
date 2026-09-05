@@ -8,7 +8,7 @@ import RegisterForm from "../react/RegisterForm";
     <img src="/img/items/diamond.png" alt="" class="pixel" />
     <div>
       <h1>登记处</h1>
-      <p>报名 / 登录 / 修改报名信息——提交成功后会返回 UUID 登录链接，请妥善保存（草稿仅保存在本浏览器，无痕模式或清除浏览器数据除外）</p>
+      <p>登录后报名 / 修改报名信息——信息与账号绑定，随时登录即可找回，无需保存任何凭证</p>
     </div>
   </div>
 
@@ -94,45 +94,7 @@ import RegisterForm from "../react/RegisterForm";
     color: var(--club-coal);
   }
 
-  .ExitModify {
-    border: none;
-    cursor: pointer;
-    font-family: var(--pixel-font);
-    font-size: 0.78rem;
-    padding: 3px 8px;
-    color: #ffb4b4;
-    background: rgba(255, 131, 131, 0.15);
-    box-shadow: inset 0 0 0 2px rgba(255, 131, 131, 0.35);
-  }
-
-  .ExitModify:hover {
-    background: rgba(255, 131, 131, 0.3);
-  }
-
-  .UuidBox {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    flex-wrap: wrap;
-    margin: 18px 0 12px;
-    padding: 14px;
-    background: #101016;
-    box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.12);
-  }
-
-  .UuidLabel {
-    font-size: 0.85rem;
-    opacity: 0.7;
-  }
-
-  .UuidValue {
-    font-size: 0.95rem;
-    color: var(--club-ctech);
-    word-break: break-all;
-  }
-
-  .UuidWarning {
+  .AuthBindNote {
     font-size: 0.9rem;
     color: var(--club-coal);
     line-height: 1.7;

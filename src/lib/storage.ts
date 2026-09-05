@@ -1,7 +1,5 @@
 export const STORAGE_KEYS = {
   draft: "mc-event:registration-draft",
-  registration: "mc-event:registration",
-  session: "mc-event:session",
 } as const;
 
 export function removeKey(key: string): void {

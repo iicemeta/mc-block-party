@@ -1,7 +1,7 @@
+import { useAuth } from "@melody-auth/react";
 import { useEffect, useRef, useState } from "react";
 import { Button, Input } from "minecraft-react-ui";
-import Turnstile, { resetTurnstile } from "./Turnstile";
-import { getSessionUuid, isValidUuid } from "../lib/session";
+import AuthGate from "./AuthGate";
 
 type Shot = {
   id: string;
@@ -15,25 +15,66 @@ type UploadResult = { name: string; url: string };
 
 const MAX_SIZE = 5 * 1024 * 1024;
 const MAX_FILES = 20;
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export default function ScreenshotUploader() {
+  return (
+    <AuthGate enforce>
+      <ScreenshotUploaderInner />
+    </AuthGate>
+  );
+}
+
+function ScreenshotUploaderInner() {
+  const { acquireToken } = useAuth();
   const [shots, setShots] = useState<Shot[]>([]);
   const [notice, setNotice] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [results, setResults] = useState<UploadResult[]>([]);
   const [dragOver, setDragOver] = useState(false);
-  const [turnstileToken, setTurnstileToken] = useState("");
   const [uploading, setUploading] = useState(false);
   const [submitError, setSubmitError] = useState("");
-  const [uuidInput, setUuidInput] = useState("");
+  const [mcId, setMcId] = useState("");
+  const [checking, setChecking] = useState(true);
+  const [notRegistered, setNotRegistered] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const noticeTimer = useRef<number | null>(null);
 
   useEffect(() => {
-    const saved = getSessionUuid();
-    if (saved) setUuidInput(saved);
-  }, []);
+    let cancelled = false;
+    const init = async () => {
+      const accessToken = await acquireToken();
+      if (!accessToken) {
+        if (!cancelled) setSubmitError("登录状态已过期，请刷新页面重新登录");
+        return;
+      }
+      try {
+        const res = await fetch("/api/me", {
+          headers: { authorization: `Bearer ${accessToken}` },
+        });
+        const data = (await res.json().catch(() => null)) as
+          | { ok?: boolean; registration?: { mcId?: string } | null }
+          | null;
+        if (cancelled) return;
+        if (res.ok && data?.ok) {
+          if (data.registration?.mcId) {
+            setMcId(data.registration.mcId);
+          } else {
+            setNotRegistered(true);
+          }
+        } else {
+          setSubmitError("载入报名信息失败，请刷新重试");
+        }
+      } catch {
+        if (!cancelled) setSubmitError("网络异常，请刷新重试");
+      } finally {
+        if (!cancelled) setChecking(false);
+      }
+    };
+    void init();
+    return () => {
+      cancelled = true;
+    };
+  }, [acquireToken]);
 
   useEffect(() => {
     const urls = shots.map((s) => s.url);
@@ -82,31 +123,29 @@ export default function ScreenshotUploader() {
   };
 
   const setCaption = (id: string, caption: string) => {
-    setShots((prev) => prev.map((s) => (s.id === id ? { ...s, caption } : s)));
+    setShots((prev) => prev.map((s) => ({ ...s, caption })));
   };
 
   const onSubmit = async () => {
-    if (shots.length === 0 || !turnstileToken || uploading) return;
-    const uuid = uuidInput.trim();
-    if (!uuid) {
-      setSubmitError("请先填写报名时获得的 UUID（可到登记处登录后自动填入）");
-      return;
-    }
-    if (!isValidUuid(uuid)) {
-      setSubmitError("UUID 格式不正确，请检查后重新输入");
-      return;
-    }
+    if (shots.length === 0 || uploading) return;
     setUploading(true);
     setSubmitError("");
     try {
+      const accessToken = await acquireToken();
+      if (!accessToken) {
+        setSubmitError("登录状态已过期，请刷新页面重新登录");
+        return;
+      }
       const fd = new FormData();
       for (const s of shots) {
         fd.append("files", s.file, s.name);
         fd.append("captions", s.caption);
       }
-      fd.append("turnstileToken", turnstileToken);
-      fd.append("uuid", uuid);
-      const res = await fetch("/api/upload", { method: "POST", body: fd });
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        headers: { authorization: `Bearer ${accessToken}` },
+        body: fd,
+      });
       const data = (await res.json().catch(() => null)) as
         | { ok?: boolean; message?: string; results?: UploadResult[] }
         | null;
@@ -114,29 +153,44 @@ export default function ScreenshotUploader() {
         setResults(data.results);
         setSubmitted(true);
         setShots([]);
-        setTurnstileToken("");
-        resetTurnstile();
         window.dispatchEvent(new CustomEvent("showcase:refresh"));
       } else {
         setSubmitError(data?.message ?? `提交失败（${res.status}），请稍后重试`);
-        setTurnstileToken("");
-        resetTurnstile();
       }
     } catch {
       setSubmitError("网络异常，请检查网络后重试");
-      setTurnstileToken("");
-      resetTurnstile();
     } finally {
       setUploading(false);
     }
   };
+
+  if (checking) {
+    return (
+      <div className="AuthLoading mc-panel">
+        <img src="/img/items/ender_pearl.png" alt="" width={40} height={40} className="pixel" />
+        <p>正在载入你的报名信息…</p>
+      </div>
+    );
+  }
+
+  if (notRegistered) {
+    return (
+      <div className="AuthLoading mc-panel">
+        <img src="/img/items/diamond.png" alt="" width={40} height={40} className="pixel" />
+        <h2>还没有报名哦</h2>
+        <p>晒图前请先到<a href="/register">登记处</a>完成报名，提交后即可回来分享你的截图。</p>
+      </div>
+    );
+  }
 
   if (submitted && results.length > 0) {
     return (
       <div className="SuccessPanel mc-panel">
         <img src="/img/items/ender_pearl.png" alt="" width={56} height={56} className="pixel" />
         <h2>提交成功！</h2>
-        <p>已成功上传 {results.length} 张图片，链接如下（可分享到群里的摄影展）：</p>
+        <p>
+          已以 <strong>{mcId}</strong> 的名义成功上传 {results.length} 张图片，链接如下（可分享到群里的摄影展）：
+        </p>
         <ul className="ResultList">
           {results.map((r, i) => (
             <li key={r.url}>
@@ -188,12 +242,8 @@ export default function ScreenshotUploader() {
       </label>
 
       <div className="ModifyRow">
-        <span>报名凭证 UUID *{uuidInput && "（已自动填入登录凭证）"}：</span>
-        <Input
-          value={uuidInput}
-          onChange={setUuidInput}
-          placeholder="到登记处登录后可自动填入"
-        />
+        <span>晒图署名（来自你的报名信息）：</span>
+        <Input value={mcId} onChange={() => {}} disabled />
       </div>
 
       {notice && <p className="Notice">{notice}</p>}
@@ -221,27 +271,16 @@ export default function ScreenshotUploader() {
         </div>
       )}
 
-      <div className="TurnstileRow">
-        <Turnstile
-          action="gallery"
-          onVerify={setTurnstileToken}
-          onExpire={() => setTurnstileToken("")}
-        />
-      </div>
-
       {submitError && <p className="SubmitError">{submitError}</p>}
 
       <div className="SubmitRow">
         <Button
           variant="primary"
-          disabled={shots.length === 0 || !turnstileToken || uploading}
-          onClick={onSubmit}
+          disabled={shots.length === 0 || uploading}
+          onClick={() => void onSubmit()}
         >
           {uploading ? "上传中…" : `提交 ${shots.length > 0 ? `(${shots.length} 张)` : ""}`}
         </Button>
-        {shots.length > 0 && !turnstileToken && !uploading && (
-          <span className="SubmitPending">请先完成人机验证</span>
-        )}
       </div>
     </div>
   );
