@@ -1,5 +1,6 @@
 /// <reference types="@cloudflare/workers-types" />
 import { isAuthError, requireAuth, type AuthEnv } from "../_auth";
+import { ensureRegistrationsSchema } from "../_db";
 import { errMsg, resolveD1 } from "../_lib";
 
 export type Env = AuthEnv & Record<string, unknown>;
@@ -32,6 +33,8 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
   if (!db) return bad("数据库绑定不可用", 500);
 
   try {
+    await ensureRegistrationsSchema(db);
+
     const row = await db
       .prepare(
         "SELECT name, student_id, college, qq, mc_id, skills FROM registrations WHERE auth_id = ?1"

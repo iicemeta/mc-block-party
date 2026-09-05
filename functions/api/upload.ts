@@ -1,5 +1,6 @@
 /// <reference types="@cloudflare/workers-types" />
 import { isAuthError, requireAuth, type AuthEnv } from "../_auth";
+import { ensureRegistrationsSchema } from "../_db";
 import { errMsg, resolveD1 } from "../_lib";
 
 export type Env = AuthEnv & {
@@ -79,6 +80,8 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   let registrationUuid: string;
   let mcId: string;
   try {
+    await ensureRegistrationsSchema(db);
+
     const reg = await db
       .prepare("SELECT uuid, mc_id FROM registrations WHERE auth_id = ?1")
       .bind(authId)

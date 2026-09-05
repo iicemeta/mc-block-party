@@ -1,5 +1,6 @@
 /// <reference types="@cloudflare/workers-types" />
 import { isAuthError, requireAuth, type AuthEnv } from "../_auth";
+import { ensureRegistrationsSchema } from "../_db";
 import { errMsg, resolveD1 } from "../_lib";
 
 export type Env = AuthEnv & {
@@ -60,36 +61,6 @@ function parseFields(body: RegisterBody): { fields?: ParsedFields; error?: strin
   };
 }
 
-const CREATE_DDL = `CREATE TABLE IF NOT EXISTS registrations (
-  id INTEGER PRIMARY KEY,
-  uuid TEXT NOT NULL UNIQUE,
-  auth_id TEXT UNIQUE,
-  name TEXT NOT NULL,
-  student_id TEXT NOT NULL UNIQUE,
-  college TEXT NOT NULL,
-  qq TEXT NOT NULL,
-  mc_id TEXT NOT NULL,
-  skills TEXT NOT NULL,
-  created_at TEXT NOT NULL DEFAULT (datetime('now')),
-  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
-)`;
-
-const AUTH_ID_INDEX_DDL =
-  "CREATE UNIQUE INDEX IF NOT EXISTS idx_registrations_auth_id ON registrations (auth_id)";
-
-/** 已建表的存量库自动补 auth_id 列（列已存在时报错，忽略即可） */
-const ADD_AUTH_ID_DDL = "ALTER TABLE registrations ADD COLUMN auth_id TEXT";
-
-async function ensureSchema(db: D1Database): Promise<void> {
-  await db.prepare(CREATE_DDL).run();
-  try {
-    await db.prepare(ADD_AUTH_ID_DDL).run();
-  } catch {
-    /* duplicate column name：列已存在，忽略 */
-  }
-  await db.prepare(AUTH_ID_INDEX_DDL).run();
-}
-
 type ExistingRow = {
   uuid: string;
   auth_id: string | null;
@@ -119,7 +90,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   if (!db) return bad("数据库绑定不可用", 500);
 
   try {
-    await ensureSchema(db);
+    await ensureRegistrationsSchema(db);
 
     const mine = await db
       .prepare("SELECT uuid, auth_id, student_id FROM registrations WHERE auth_id = ?1")
