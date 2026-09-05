@@ -21,6 +21,44 @@ export const postLogoutRedirectUri = `${trimSlash(
 
 const RETURN_TO_KEY = "mc-event:auth:returnTo";
 const LOGIN_ATTEMPT_KEY = "mc-event:auth:lastLoginRedirect";
+const ADMIN_CACHE_KEY = "mc-event:auth:adminRole";
+
+export type CachedAdminRole = "super" | "admin" | "no";
+
+/**
+ * 管理员角色缓存（sessionStorage，按邮箱区分账号）。
+ * 导航栏据此决定是否展示「管理」入口，每个会话最多查询一次后端。
+ */
+export function getCachedAdminRole(email: string): CachedAdminRole | null {
+  try {
+    const raw = window.sessionStorage.getItem(ADMIN_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { email: string; role: CachedAdminRole };
+    if (parsed.email !== email.toLowerCase()) return null;
+    return parsed.role;
+  } catch {
+    return null;
+  }
+}
+
+export function setCachedAdminRole(email: string, role: CachedAdminRole): void {
+  try {
+    window.sessionStorage.setItem(
+      ADMIN_CACHE_KEY,
+      JSON.stringify({ email: email.toLowerCase(), role })
+    );
+  } catch {
+    /* 忽略 */
+  }
+}
+
+export function clearCachedAdminRole(): void {
+  try {
+    window.sessionStorage.removeItem(ADMIN_CACHE_KEY);
+  } catch {
+    /* 忽略 */
+  }
+}
 
 /** 记录当前页面路径，登录完成后跳回。仅允许站内相对路径。 */
 export function stashReturnTo(): void {
