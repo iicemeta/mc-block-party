@@ -1,11 +1,11 @@
 /// <reference types="@cloudflare/workers-types" />
-import { errMsg, resolveD1, siteverify, UUID_RE } from "../_lib";
+import { isAuthError, requireAuth, type AuthEnv } from "../_auth";
+import { ensureRegistrationsSchema } from "../_db";
+import { errMsg, resolveD1 } from "../_lib";
 
-export type Env = {
-  TURNSTILE_SECRET?: string;
-  TURNSTILE_HOSTNAMES?: string;
+export type Env = AuthEnv & {
   IMG_UPLOAD_URL?: string;
-} & Record<string, unknown>;
+};
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
 const MAX_FILES = 20;
@@ -36,11 +36,9 @@ type UpstreamResult = {
 };
 
 export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
-  const secret = env.TURNSTILE_SECRET;
-  if (!secret) {
-    console.error("upload 500: TURNSTILE_SECRET 未配置");
-    return bad("服务端未配置 TURNSTILE_SECRET", 500);
-  }
+  const auth = await requireAuth(request, env);
+  if (isAuthError(auth)) return auth.error;
+  const { authId } = auth;
 
   const upstreamUrl = (env.IMG_UPLOAD_URL ?? "").trim();
   if (!upstreamUrl) {
@@ -67,17 +65,6 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     return bad("表单数据不合法");
   }
 
-  const turnstileToken = typeof form.get("turnstileToken") === "string"
-    ? (form.get("turnstileToken") as string).trim()
-    : "";
-  if (!turnstileToken || turnstileToken.length > 2048) {
-    return bad("缺少人机验证凭证，请先完成验证");
-  }
-
-  const uuid = typeof form.get("uuid") === "string" ? (form.get("uuid") as string).trim() : "";
-  if (!uuid) return bad("请填写报名时获得的 UUID");
-  if (!UUID_RE.test(uuid)) return bad("UUID 格式不正确");
-
   const files = form.getAll("files").filter((f): f is File => f instanceof File);
   if (files.length === 0) return bad("未选择任何图片");
   if (files.length > MAX_FILES) return bad(`单次最多提交 ${MAX_FILES} 张图片`);
@@ -90,29 +77,31 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   const db = resolveD1(env);
   if (!db) return bad("数据库绑定不可用", 500);
 
+  let registrationUuid: string;
   let mcId: string;
   try {
+    await ensureRegistrationsSchema(db);
+
     const reg = await db
-      .prepare("SELECT mc_id FROM registrations WHERE uuid = ?1")
-      .bind(uuid)
-      .first<{ mc_id: string }>();
+      .prepare("SELECT uuid, mc_id FROM registrations WHERE auth_id = ?1")
+      .bind(authId)
+      .first<{ uuid: string; mc_id: string }>();
     if (!reg) {
       return json(
         {
           ok: false,
-          message: "未找到该 UUID 对应的报名记录。请先完成报名，或检查 UUID 是否输入正确。",
+          code: "not_registered",
+          message: "尚未找到你的报名记录，请先到「登记处」完成报名再提交晒图。",
         },
         403
       );
     }
+    registrationUuid = reg.uuid;
     mcId = reg.mc_id;
   } catch (e) {
     console.error("upload d1 error", e);
     return bad(`数据库查询失败：${errMsg(e)}`, 500);
   }
-
-  const verifyError = await siteverify(secret, turnstileToken, env.TURNSTILE_HOSTNAMES, "gallery");
-  if (verifyError !== null) return bad(verifyError, 403);
 
   const results: { name: string; url: string }[] = [];
   try {
@@ -143,7 +132,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
           `INSERT INTO showcase (registration_uuid, mc_id, image_url, caption)
            VALUES (?1, ?2, ?3, ?4)`
         )
-        .bind(uuid, mcId, results[i].url, (captions[i] ?? "").slice(0, 100))
+        .bind(registrationUuid, mcId, results[i].url, (captions[i] ?? "").slice(0, 100))
         .run();
     }
   } catch (e) {

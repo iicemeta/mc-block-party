@@ -1,20 +1,27 @@
+import { useAuth } from "@melody-auth/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Button, Input, Tag } from "minecraft-react-ui";
 import { assignTeams, mulberry32, type Team } from "../lib/shuffle";
 import { MOCK_PARTICIPANTS } from "../lib/mockParticipants";
-import { STORAGE_KEYS, loadJSON } from "../lib/storage";
-import Turnstile, { resetTurnstile } from "./Turnstile";
+import AuthGate from "./AuthGate";
 import shuffleSrc from "../lib/shuffle.ts?raw";
 
 type Phase = "idle" | "rolling" | "boom" | "done";
-
-type Registration = { mcId?: string };
 
 const ROLL_MS = 2600;
 const BOOM_MS = 550;
 const SLOT_TICK_MS = 70;
 
 export default function LotteryMachine() {
+  return (
+    <AuthGate>
+      <LotteryMachineInner />
+    </AuthGate>
+  );
+}
+
+function LotteryMachineInner() {
+  const { isAuthenticated, isAuthenticating, acquireToken } = useAuth();
   const [total, setTotal] = useState(MOCK_PARTICIPANTS.length);
   const [teamSize, setTeamSize] = useState(4);
   const [phase, setPhase] = useState<Phase>("idle");
@@ -23,14 +30,37 @@ export default function LotteryMachine() {
   const [teams, setTeams] = useState<Team[]>([]);
   const [error, setError] = useState("");
   const [myId, setMyId] = useState("");
-  const [turnstileToken, setTurnstileToken] = useState("");
 
   const slotTimer = useRef<number | null>(null);
   const stageTimer = useRef<number | null>(null);
 
   useEffect(() => {
-    const reg = loadJSON<Registration>(STORAGE_KEYS.registration);
-    if (reg?.mcId) setMyId(reg.mcId);
+    let cancelled = false;
+    const loadMyId = async () => {
+      if (!isAuthenticated) return;
+      const accessToken = await acquireToken();
+      if (!accessToken || cancelled) return;
+      try {
+        const res = await fetch("/api/me", {
+          headers: { authorization: `Bearer ${accessToken}` },
+        });
+        const data = (await res.json().catch(() => null)) as
+          | { ok?: boolean; registration?: { mcId?: string } | null }
+          | null;
+        if (!cancelled && res.ok && data?.ok && data.registration?.mcId) {
+          setMyId(data.registration.mcId);
+        }
+      } catch {
+        /* 抽奖为娱乐功能，报名信息载入失败不阻塞 */
+      }
+    };
+    void loadMyId();
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated, isAuthenticating, acquireToken]);
+
+  useEffect(() => {
     return () => {
       if (slotTimer.current) window.clearInterval(slotTimer.current);
       if (stageTimer.current) window.clearTimeout(stageTimer.current);
@@ -71,7 +101,6 @@ export default function LotteryMachine() {
   };
 
   const start = () => {
-    if (!turnstileToken) return;
     if (teamSize < 1 || !Number.isInteger(teamSize)) {
       setError("每组人数必须是正整数");
       return;
@@ -80,14 +109,11 @@ export default function LotteryMachine() {
       setError(`总人数至少 ${teamSize} 人才能成队`);
       return;
     }
-    setTurnstileToken("");
-    resetTurnstile();
     run(Math.floor(Math.random() * 2 ** 31));
   };
 
   const rolling = phase === "rolling";
   const boom = phase === "boom";
-  const needVerify = !rolling && !boom && !turnstileToken;
 
   return (
     <div className={boom ? "Lottery shaking" : "Lottery"}>
@@ -111,17 +137,11 @@ export default function LotteryMachine() {
         <Button
           variant="primary"
           onClick={start}
-          disabled={rolling || boom || !turnstileToken}
+          disabled={rolling || boom}
           className="StartBtn"
         >
           {phase === "done" ? "重新抽取" : "开始抽取"}
         </Button>
-        {needVerify && <span className="VerifyHint">完成人机验证后可抽取</span>}
-        {phase === "done" && seed !== null && (
-          <Button variant="secondary" onClick={() => run(seed)}>
-            同种子重抽（种子 {seed}）
-          </Button>
-        )}
       </div>
 
       {myId && (
@@ -129,19 +149,16 @@ export default function LotteryMachine() {
           <Tag className="Tag_success">已报名</Tag> 检测到你的报名记录：{myId}（演示名单未含真实数据）
         </p>
       )}
+      {!isAuthenticating && !isAuthenticated && (
+        <p className="RegNotice">
+          <Tag>未登录</Tag> 登录后可自动识别你的报名 MC ID（右上角「登录 / 注册」）
+        </p>
+      )}
       {error && (
         <p className="Error">
           <Tag className="ErrorTag">出错了</Tag> {error}
         </p>
       )}
-
-      <div className="TurnstileRow">
-        <Turnstile
-          action="lottery"
-          onVerify={setTurnstileToken}
-          onExpire={() => setTurnstileToken("")}
-        />
-      </div>
 
       <div className="Machine mc-panel">
         <div className="Slot">{rolling ? slotName : phase === "idle" ? "等待开始…" : "TNT!"}</div>

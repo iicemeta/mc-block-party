@@ -1,7 +1,9 @@
--- 报名表：一人一条（学号唯一），uuid 为报名凭证
+-- 报名表：一人一条（学号唯一）；auth_id 关联 melody auth 账号（登录凭证），
+-- uuid 仅为内部关联字段（showcase 外键），不再作为用户凭证
 CREATE TABLE IF NOT EXISTS registrations (
   id INTEGER PRIMARY KEY,
   uuid TEXT NOT NULL UNIQUE,
+  auth_id TEXT UNIQUE,
   name TEXT NOT NULL,
   student_id TEXT NOT NULL UNIQUE,
   college TEXT NOT NULL,

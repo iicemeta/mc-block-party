@@ -1,0 +1,104 @@
+---
+import Layout from "../layouts/Layout.astro";
+import AdminPanel from "../react/AdminPanel";
+---
+
+<Layout title="管理控制台 · MC 联谊嘉年华">
+  <div class="page-header">
+    <img src="/img/items/redstone_block.png" alt="" class="pixel" />
+    <div>
+      <h1>管理控制台</h1>
+      <p>报名数据统计与名单导出 · 管理员管理（仅活动管理员可见）</p>
+    </div>
+  </div>
+
+  <div class="AdminWrap">
+    <AdminPanel client:load />
+  </div>
+</Layout>
+
+<style>
+  .AdminWrap {
+    max-width: 760px;
+    margin: 0 auto;
+  }
+</style>
+
+<style is:global>
+  .AdminStats {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+    flex-wrap: wrap;
+    padding: 20px 24px;
+  }
+
+  .StatBlock {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .StatLabel {
+    font-size: 0.85rem;
+    opacity: 0.7;
+  }
+
+  .StatValue {
+    font-size: 2rem;
+    color: var(--club-ctech);
+    text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.6);
+  }
+
+  .AdminSectionTitle {
+    margin: 32px 0 8px;
+    font-size: 1.15rem;
+  }
+
+  .AdminHint {
+    margin: 0 0 16px;
+    font-size: 0.88rem;
+    opacity: 0.75;
+    line-height: 1.7;
+  }
+
+  .AdminTable {
+    width: 100%;
+    margin-top: 16px;
+    border-collapse: collapse;
+    font-size: 0.92rem;
+  }
+
+  .AdminTable th,
+  .AdminTable td {
+    text-align: left;
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    word-break: break-all;
+  }
+
+  .AdminTable th {
+    font-size: 0.85rem;
+    opacity: 0.7;
+  }
+
+  .ExitModify {
+    border: none;
+    cursor: pointer;
+    font-family: var(--pixel-font);
+    font-size: 0.78rem;
+    padding: 3px 8px;
+    color: #ffb4b4;
+    background: rgba(255, 131, 131, 0.15);
+    box-shadow: inset 0 0 0 2px rgba(255, 131, 131, 0.35);
+  }
+
+  .ExitModify:hover {
+    background: rgba(255, 131, 131, 0.3);
+  }
+
+  .ExitModify:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+</style>

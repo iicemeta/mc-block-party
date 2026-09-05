@@ -1,4 +1,5 @@
 const MUTE_KEY = "mc-event:muted";
+const PROMPT_KEY = "mc-event:sound-prompted";
 const NAV_DELAY_MS = 150;
 
 import clickOgg from "../assets/audio/click_stereo.ogg?inline";
@@ -43,16 +44,30 @@ function getCtx(): AudioContext | null {
   return ctx;
 }
 
+/**
+ * 解码用 OfflineAudioContext：不受自动播放政策限制，
+ * 页面加载时即可解码，也不会产生 "AudioContext was not allowed to start" 警告。
+ */
+function decodeBuffer(url: string): Promise<AudioBuffer> {
+  const OC =
+    window.OfflineAudioContext ??
+    (window as unknown as { webkitOfflineAudioContext?: typeof OfflineAudioContext })
+      .webkitOfflineAudioContext;
+  if (!OC) return Promise.reject(new Error("no OfflineAudioContext"));
+  const oc = new OC(1, 1, 44100);
+  return fetch(url)
+    .then((res) => {
+      if (!res.ok) throw new Error(String(res.status));
+      return res.arrayBuffer();
+    })
+    .then((ab) => oc.decodeAudioData(ab));
+}
+
 function fetchBuffer(name: SfxName): void {
   if (buffers.has(name)) return;
-  const c = getCtx();
-  if (!c) return;
   const conf = SOUNDS[name];
-  const load = async (url: string) => {
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(String(res.status));
-    return c.decodeAudioData(await res.arrayBuffer());
-  };
+  buffers.set(name, null);
+  const load = (url: string) => decodeBuffer(url);
   (async () => {
     let buf: AudioBuffer;
     try {
@@ -73,11 +88,7 @@ function fetchBuffer(name: SfxName): void {
   })();
 }
 
-function play(name: SfxName): void {
-  const c = getCtx();
-  if (!c) return;
-  const buf = buffers.get(name);
-  if (!buf) return;
+function startSource(c: AudioContext, name: SfxName, buf: AudioBuffer): void {
   const prev = playing.get(name);
   if (prev) {
     try {
@@ -99,7 +110,25 @@ function play(name: SfxName): void {
   playing.set(name, src);
 }
 
-function warmup(): void {
+function play(name: SfxName): void {
+  const c = getCtx();
+  if (!c) return;
+  const buf = buffers.get(name);
+  if (!buf) return;
+  if (c.state !== "running") {
+    // resume 完成后再播，避免 suspended 状态下静默丢失
+    void c.resume()
+      .then(() => {
+        if (c.state === "running") startSource(c, name, buf);
+      })
+      .catch(() => {});
+    return;
+  }
+  startSource(c, name, buf);
+}
+
+/** 必须在用户手势事件中调用：创建 / 恢复 AudioContext 并预解码 */
+function initAudio(): void {
   getCtx();
   (Object.keys(SOUNDS) as SfxName[]).forEach(fetchBuffer);
 }
@@ -129,7 +158,61 @@ function applyMuteUI(): void {
     .forEach((btn) => btn.setAttribute("data-muted", String(muted)));
 }
 
-window.addEventListener("pointerdown", warmup, { once: true, capture: true });
+/** 是否已经做过音效选择（弹窗选过，或老用户点过音效开关） */
+function hasSoundChoice(): boolean {
+  try {
+    if (window.localStorage.getItem(PROMPT_KEY) === "1") return true;
+    return window.localStorage.getItem(MUTE_KEY) !== null;
+  } catch {
+    return true; /* 无法存储（隐私模式）则不打扰用户 */
+  }
+}
+
+function markPrompted(): void {
+  try {
+    window.localStorage.setItem(PROMPT_KEY, "1");
+  } catch {
+    /* 忽略 */
+  }
+}
+
+function showSoundPrompt(): void {
+  if (hasSoundChoice()) return;
+  const overlay = document.createElement("div");
+  overlay.className = "SoundPrompt";
+  overlay.setAttribute("role", "dialog");
+  overlay.setAttribute("aria-modal", "true");
+  overlay.innerHTML = `
+    <div class="SoundPrompt-panel mc-panel">
+      <img src="/img/items/note_block.png" alt="" width="44" height="44" class="pixel" />
+      <h2>开启按钮音效？</h2>
+      <p>本站的按钮自带一点点像素风音效。<br />浏览器规定：需要你先点一下，我们才能播放声音。</p>
+      <div class="SoundPrompt-actions">
+        <button type="button" class="AuthBtn SoundOn" data-sound-choice="on">开启音效</button>
+        <button type="button" class="AuthBtn" data-sound-choice="off">保持静音</button>
+      </div>
+      <small>之后可随时用导航栏右侧的音效按钮切换</small>
+    </div>`;
+  document.body.appendChild(overlay);
+
+  const close = () => overlay.remove();
+  overlay.querySelector("[data-sound-choice='on']")?.addEventListener("click", () => {
+    markPrompted();
+    setMuted(false);
+    initAudio(); // 用户手势内创建 / 恢复 AudioContext
+    applyMuteUI();
+    close();
+    play("click");
+  });
+  overlay.querySelector("[data-sound-choice='off']")?.addEventListener("click", () => {
+    markPrompted();
+    setMuted(true);
+    close();
+  });
+}
+
+// 首次用户手势兜底初始化（即使用户没点弹窗，点了页面其它地方也能激活音频）
+window.addEventListener("pointerdown", () => initAudio(), { once: true, capture: true });
 
 let lastClickGesture = 0;
 
@@ -142,6 +225,10 @@ document.addEventListener(
   "click",
   (e) => {
     if (!(e.target instanceof Element)) return;
+
+    // 音效选择弹窗由自己的处理器负责，避免双播 / 误切换
+    if (e.target.closest(".SoundPrompt")) return;
+
     const hit = e.target.closest(SOUNDABLE);
     if (!hit) return;
 
@@ -188,5 +275,7 @@ window.__mcSfx = {
   ctxState: () => ctx?.state ?? "none",
 };
 
-warmup();
+// 页面加载：仅预解码音频（OfflineAudioContext，无手势要求），不创建 AudioContext
+(Object.keys(SOUNDS) as SfxName[]).forEach(fetchBuffer);
 applyMuteUI();
+showSoundPrompt();
