@@ -1,0 +1,37 @@
+{
+	"$schema": "./node_modules/wrangler/config-schema.json",
+	"compatibility_date": "2026-09-03",
+	"compatibility_flags": [
+		"global_fetch_strictly_public"
+	],
+	"name": "mc-block-party",
+	"main": "@astrojs/cloudflare/entrypoints/server",
+	"assets": {
+		"directory": "./dist",
+		"binding": "ASSETS"
+	},
+	// 数据库绑定：后端代码通过 env.DB 访问（src/server/_lib.ts 的 resolveD1）
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "mc-block-party-db",
+			"database_id": "4ee7ce50-9ab9-45e3-8f87-0b349c5249fe",
+			"migrations_dir": "../../migrations"
+		}
+	],
+	// 非敏感环境变量：直接填在这里，wrangler deploy 时生效（已从原 Pages 仪表盘迁移）；
+	// 本地开发（astro dev / astro preview）可用项目根目录的 .dev.vars 覆盖
+	"vars": {
+		"MCAUTH_SERVER_URI": "https://auth.iicemeta.com",
+		"MCAUTH_CLIENT_ID": "03566153d5abd1ef459c5fab8d5124558E6C515f2D5DD09B60386205A7c57815",
+		"SUPER_ADMIN_EMAIL": "richardmiku@vip.qq.com"
+	},
+	// 敏感变量（密钥类）不放配置文件，用命令设置（原 Pages 仪表盘的加密变量 API 读不到明文，需手动执行一次）：
+	//   wrangler secret put IMG_UPLOAD_URL
+	//   wrangler secret put TURNSTILE_SECRET      （启用 Turnstile 时）
+	//   wrangler secret put TURNSTILE_HOSTNAMES   （启用 Turnstile 时）
+	// 本地调试写入 .dev.vars（已被 .gitignore 忽略）
+	"observability": {
+		"enabled": true
+	}
+}

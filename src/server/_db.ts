@@ -1,5 +1,3 @@
-/// <reference types="@cloudflare/workers-types" />
-
 /**
  * isolate 生命周期内的 schema 结果缓存：同一 D1 绑定只执行一次建表 / 补列 / 迁移，
  * 避免每个请求都多出 2-3 次 D1 往返。失败时清除缓存，下次请求可重试。

@@ -1,10 +1,9 @@
-/// <reference types="@cloudflare/workers-types" />
 import { createRemoteJWKSet, jwtVerify } from "jose";
 
 export type AuthEnv = {
   MCAUTH_SERVER_URI?: string;
   MCAUTH_CLIENT_ID?: string;
-} & Record<string, unknown>;
+};
 
 const json = (data: unknown, status = 200) =>
   new Response(JSON.stringify(data), {

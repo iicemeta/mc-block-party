@@ -1,16 +1,17 @@
 {
-  "extends": "astro/tsconfigs/base",
+  "extends": "astro/tsconfigs/strict",
   "include": [
     ".astro/types.d.ts",
-    "**/*"
+    "**/*",
+    "./worker-configuration.d.ts"
   ],
   "exclude": [
-    "dist",
-    "functions",
-    "docs/oproj"
-  ],
-  "compilerOptions": {
-    "jsx": "react-jsx",
-    "jsxImportSource": "react"
-  }
+    "dist"
+],
+"compilerOptions": {
+    "types": [
+        "./worker-configuration.d.ts",
+        "node"
+    ]
+}
 }

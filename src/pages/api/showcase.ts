@@ -1,13 +1,10 @@
-/// <reference types="@cloudflare/workers-types" />
-import { isAuthError, requireAuth, type AuthEnv } from "../_auth";
-import { ensureUsersSchema } from "../_db";
-import { resolveD1 } from "../_lib";
+import type { APIContext } from "astro";
+import { env } from "cloudflare:workers";
+import { isAuthError, requireAuth } from "../../server/_auth";
+import { ensureShowcaseSchema, ensureUsersSchema } from "../../server/_db";
+import { resolveD1 } from "../../server/_lib";
 
-export type Env = AuthEnv & {
-  TURNSTILE_SECRET?: string;
-  TURNSTILE_HOSTNAMES?: string;
-  IMG_UPLOAD_URL?: string;
-} & Record<string, unknown>;
+export const prerender = false;
 
 const json = (data: unknown, status = 200) =>
   new Response(JSON.stringify(data), {
@@ -31,7 +28,7 @@ type ShowcaseRow = {
  * 未登录 / 凭证失效 / 普通用户一律返回 false：接口照常返回公开数据，
  * 学号等仅管理员可见的字段不会出现在响应里。
  */
-async function isAdminRequest(db: D1Database, request: Request, env: Env): Promise<boolean> {
+async function isAdminRequest(db: D1Database, request: Request): Promise<boolean> {
   const auth = await requireAuth(request, env);
   if (isAuthError(auth)) return false;
   try {
@@ -47,13 +44,16 @@ async function isAdminRequest(db: D1Database, request: Request, env: Env): Promi
   }
 }
 
-export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
+export async function GET(context: APIContext): Promise<Response> {
+  const request = context.request;
   const db = resolveD1(env);
   if (!db) return bad("数据库绑定不可用", 500);
 
-  const admin = await isAdminRequest(db, request, env);
+  const admin = await isAdminRequest(db, request);
 
   try {
+    // 空库（如全新本地 D1）自动建表，避免公开列表接口 500
+    await ensureShowcaseSchema(db);
     // 图片编号即 showcase.id（行主键）：管理员额外 JOIN 报名表带上学号，便于定位到人
     const result = await db
       .prepare(
@@ -78,4 +78,4 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
     console.error("showcase d1 error", e);
     return bad("风采数据查询失败，请稍后重试", 500);
   }
-};
+}

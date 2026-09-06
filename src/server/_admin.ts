@@ -1,4 +1,3 @@
-/// <reference types="@cloudflare/workers-types" />
 import { isAuthError, requireAuth, type AuthEnv } from "./_auth";
 import { ensureUsersSchema } from "./_db";
 import { resolveD1 } from "./_lib";

@@ -1,5 +1,5 @@
 {
-  "name": "mc-event",
+  "name": "mc-block-party",
   "type": "module",
   "version": "0.0.1",
   "engines": {
@@ -8,17 +8,19 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
-    "preview": "astro preview",
+    "preview": "astro build && astro preview",
     "astro": "astro",
     "prepare": "node scripts/check-vendor.mjs",
-    "pagesdeploy": "wrangler pages deploy ./dist --project-name=mc-block-party --branch=main"
+    "cf-typegen": "wrangler types",
+    "deploy": "astro build && wrangler deploy"
   },
   "dependencies": {
+    "@astrojs/cloudflare": "^14.3.0",
     "@astrojs/react": "^6.0.5",
     "@melody-auth/react": "^1.0.11",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.5",
-    "astro": "^7.2.10",
+    "astro": "^7.3.1",
     "jose": "^6.2.11",
     "minecraft-react-ui": "file:vendor/minecraft-react-ui",
     "react": "^19.2.8",
@@ -28,7 +30,8 @@
     "esbuild": true
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^5.20260903.1",
-    "typescript": "^7.0.2"
+    "@types/node": "^26.4.1",
+    "typescript": "^7.0.2",
+    "wrangler": "^4.129.0"
   }
 }

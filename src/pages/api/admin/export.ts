@@ -1,9 +1,10 @@
-/// <reference types="@cloudflare/workers-types" />
-import { requireAdmin, csvCell, type AdminEnv } from "../../_admin";
-import { ensureRegistrationsSchema } from "../../_db";
-import { errMsg, resolveD1 } from "../../_lib";
+import type { APIContext } from "astro";
+import { env } from "cloudflare:workers";
+import { csvCell, requireAdmin } from "../../../server/_admin";
+import { ensureRegistrationsSchema } from "../../../server/_db";
+import { errMsg, resolveD1 } from "../../../server/_lib";
 
-export type Env = AdminEnv & Record<string, unknown>;
+export const prerender = false;
 
 const SKILL_LABELS: Record<string, string> = {
   build: "建筑",
@@ -24,7 +25,8 @@ type RegistrationRow = {
 };
 
 /** 报名名单导出（CSV，带 BOM，Excel 直接打开不乱码） */
-export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
+export async function GET(context: APIContext): Promise<Response> {
+  const request = context.request;
   const admin = await requireAdmin(request, env);
   if ("error" in admin) return admin.error;
 
@@ -92,4 +94,4 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
       "cache-control": "no-store",
     },
   });
-};
+}

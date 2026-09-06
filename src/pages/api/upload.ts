@@ -1,11 +1,10 @@
-/// <reference types="@cloudflare/workers-types" />
-import { isAuthError, requireAuth, type AuthEnv } from "../_auth";
-import { ensureRegistrationsSchema, ensureShowcaseSchema } from "../_db";
-import { resolveD1 } from "../_lib";
+import type { APIContext } from "astro";
+import { env } from "cloudflare:workers";
+import { isAuthError, requireAuth } from "../../server/_auth";
+import { ensureRegistrationsSchema, ensureShowcaseSchema } from "../../server/_db";
+import { getVar, resolveD1 } from "../../server/_lib";
 
-export type Env = AuthEnv & {
-  IMG_UPLOAD_URL?: string;
-};
+export const prerender = false;
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
 const MAX_FILES = 20;
@@ -24,12 +23,13 @@ type UpstreamResult = {
   msg?: string;
 };
 
-export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
+export async function POST(context: APIContext): Promise<Response> {
+  const request = context.request;
   const auth = await requireAuth(request, env);
   if (isAuthError(auth)) return auth.error;
   const { authId } = auth;
 
-  const upstreamUrl = (env.IMG_UPLOAD_URL ?? "").trim();
+  const upstreamUrl = getVar(env, "IMG_UPLOAD_URL").trim();
   if (!upstreamUrl) {
     console.error("upload 500: IMG_UPLOAD_URL 未配置");
     return bad("服务端未配置 IMG_UPLOAD_URL（值应为完整的图床接口地址）", 500);
@@ -136,4 +136,4 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     console.error("upload d1 error", e);
     return bad("图片已上传，但风采展示记录写入失败，请稍后重试", 500);
   }
-};
+}
