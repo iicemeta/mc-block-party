@@ -95,6 +95,106 @@ import { SITE_CONFIG } from "../config/site";
     line-height: 1.6;
     word-break: break-all;
   }
+
+  /* 卡片缩略图可点击进入灯箱 */
+  .ShowcaseArtImg {
+    cursor: zoom-in;
+    transition: transform 0.15s;
+  }
+  .ShowcaseArtImg:hover {
+    transform: scale(1.04);
+  }
+
+  /* ===== 灯箱（大图预览） ===== */
+  .Lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(8, 8, 12, 0.88);
+    animation: fadeIn 0.15s ease-out;
+  }
+  .LightboxBody {
+    margin: 0;
+    max-width: min(92vw, 1100px);
+    max-height: 88vh;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .LightboxBody img {
+    max-width: 100%;
+    max-height: 74vh;
+    object-fit: contain;
+    margin: 0 auto;
+    background:
+      repeating-conic-gradient(#20202a 0% 25%, #26262f 0% 50%) 0 0 / 24px 24px;
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.18), 0 12px 48px rgba(0, 0, 0, 0.6);
+  }
+  .LightboxBody figcaption {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    color: var(--text-color);
+    font-size: 0.95rem;
+  }
+  .LightboxCaption {
+    opacity: 0.8;
+    max-width: 60%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .LightboxCount {
+    opacity: 0.6;
+    font-size: 0.85rem;
+  }
+  .LightboxClose {
+    position: absolute;
+    top: 14px;
+    right: 18px;
+    width: 40px;
+    height: 40px;
+    font-size: 1.6rem;
+    line-height: 1;
+    color: #fff;
+    background: rgba(0, 0, 0, 0.55);
+    border: 2px solid rgba(255, 255, 255, 0.25);
+    cursor: pointer;
+  }
+  .LightboxClose:hover {
+    background: #c33;
+  }
+  .LightboxNav {
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+    font-size: 1.8rem;
+    line-height: 1;
+    color: #fff;
+    background: rgba(0, 0, 0, 0.55);
+    border: 2px solid rgba(255, 255, 255, 0.25);
+    cursor: pointer;
+  }
+  .LightboxNav:hover {
+    border-color: var(--club-ctech);
+    background: rgba(80, 173, 46, 0.25);
+  }
+  .LightboxPrev {
+    margin-right: 12px;
+  }
+  .LightboxNext {
+    margin-left: 12px;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
 </style>
 
 <style is:global>
@@ -219,5 +319,43 @@ import { SITE_CONFIG } from "../config/site";
 
   .ResultList a:hover {
     color: var(--club-coal);
+  }
+
+  /* 提交成功面板：结果缩略图（点击可看原图） */
+  .ResultThumbs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    margin: 16px 0 4px;
+  }
+  .ResultThumbs a {
+    position: relative;
+    display: block;
+    width: 96px;
+    height: 72px;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    background: #101016;
+  }
+  .ResultThumbs a:hover {
+    border-color: var(--club-ctech);
+  }
+  .ResultThumbs img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .ResultThumbs span {
+    position: absolute;
+    left: 2px;
+    bottom: 2px;
+    padding: 1px 5px;
+    font-size: 0.68rem;
+    color: #fff;
+    background: rgba(0, 0, 0, 0.7);
+  }
+
+  .SuccessActions a {
+    text-decoration: none;
   }
 </style>

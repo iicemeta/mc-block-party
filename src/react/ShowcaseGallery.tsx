@@ -24,6 +24,8 @@ function ShowcaseGalleryInner() {
   const { acquireToken } = useAuth();
   const [entries, setEntries] = useState<Entry[] | null>(null);
   const [error, setError] = useState("");
+  /** 灯箱当前展示的条目下标；null = 关闭 */
+  const [lightbox, setLightbox] = useState<number | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -58,17 +60,40 @@ function ShowcaseGalleryInner() {
     };
   }, [load]);
 
+  // 灯箱打开时支持 ESC 关闭 / 左右键切换，并锁定页面滚动
+  useEffect(() => {
+    if (lightbox === null) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setLightbox(null);
+      if (e.key === "ArrowLeft") setLightbox((v) => (v === null ? v : (v - 1 + entries!.length) % entries!.length));
+      if (e.key === "ArrowRight") setLightbox((v) => (v === null ? v : (v + 1) % entries!.length));
+    };
+    document.addEventListener("keydown", onKey);
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = "";
+    };
+  }, [lightbox, entries]);
+
   if (error) return <p className="ShowcaseEmpty">{error}</p>;
   if (entries === null) return <p className="ShowcaseEmpty">作品加载中…</p>;
   if (entries.length === 0)
     return <p className="ShowcaseEmpty">还没有作品——上传第一张截图，抢占首页！</p>;
 
   return (
-    <div className="ShowcaseGrid">
-      {entries.map((e) => (
-        <div key={e.imageId} className="ShowcaseCard mc-panel">
+    <>
+      <div className="ShowcaseGrid">
+        {entries.map((e, i) => (
+          <div key={e.imageId} className="ShowcaseCard mc-panel">
           <div className="ShowcaseArt">
-            <img src={e.imageUrl} alt={e.caption || `MCID 为 ${e.mcId} 的玩家上传的截图`} loading="lazy" />
+              <img
+                src={e.imageUrl}
+                alt={e.caption || `MCID 为 ${e.mcId} 的玩家上传的截图`}
+                loading="lazy"
+                className="ShowcaseArtImg"
+                onClick={() => setLightbox(i)}
+              />
           </div>
           <div className="ShowcaseMeta">
             <span className="ShowcaseId" title={`图片编号 #${e.imageId}`}>
@@ -80,8 +105,71 @@ function ShowcaseGalleryInner() {
             </strong>
           </div>
           <p className="ShowcaseCaption">{e.caption || "（没有留言）"}</p>
+          </div>
+        ))}
+      </div>
+      {lightbox !== null && entries[lightbox] && (
+        <div
+          className="Lightbox"
+          role="dialog"
+          aria-modal="true"
+          aria-label="截图大图预览"
+          onClick={() => setLightbox(null)}
+        >
+          <button
+            type="button"
+            className="LightboxClose"
+            aria-label="关闭预览"
+            onClick={() => setLightbox(null)}
+          >
+            ×
+          </button>
+          {entries.length > 1 && (
+            <button
+              type="button"
+              className="LightboxNav LightboxPrev"
+              aria-label="上一张"
+              onClick={(e) => {
+                e.stopPropagation();
+                setLightbox((lightbox - 1 + entries.length) % entries.length);
+              }}
+            >
+              ‹
+            </button>
+          )}
+          <figure className="LightboxBody" onClick={(e) => e.stopPropagation()}>
+            <img
+              src={entries[lightbox].imageUrl}
+              alt={entries[lightbox].caption || `MCID 为 ${entries[lightbox].mcId} 的玩家上传的截图`}
+            />
+            <figcaption>
+              <span className="ShowcaseId">
+                #{entries[lightbox].imageId}
+              </span>
+              <strong>{entries[lightbox].mcId}</strong>
+              <span className="LightboxCaption">
+                {entries[lightbox].caption || "（没有留言）"}
+              </span>
+              <span className="LightboxCount">
+                {lightbox + 1} / {entries.length}
+              </span>
+            </figcaption>
+          </figure>
+          {entries.length > 1 && (
+            <button
+              type="button"
+              className="LightboxNav LightboxNext"
+              aria-label="下一张"
+              onClick={(e) => {
+                e.stopPropagation();
+                setLightbox((lightbox + 1) % entries.length);
+              }}
+            >
+              ›
+            </button>
+          )}
         </div>
-      ))}
-    </div>
+      )}
+    </>
   );
 }

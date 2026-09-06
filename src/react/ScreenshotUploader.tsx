@@ -218,19 +218,21 @@ function ScreenshotUploaderInner() {
         <img src="/img/items/ender_pearl.png" alt="" width={56} height={56} className="pixel" />
         <h2>提交成功！</h2>
         <p>
-          已以 <strong>{mcId}</strong> 的名义成功上传 {results.length} 张图片，链接如下（可分享到群里的摄影展）：
+          已以 <strong>{mcId}</strong> 的名义成功上传 {results.length} 张图片，
+          现在已经出现在风采墙上（滚动到下方展示区或点击按钮查看）。
         </p>
-        <ul className="ResultList">
-          {results.map((r, i) => (
-            <li key={r.url}>
-              <span className="ResultIndex">#{r.id ?? i + 1}</span>
-              <a href={r.url} target="_blank" rel="noreferrer">
-                {r.url}
-              </a>
-            </li>
+        <div className="ResultThumbs">
+          {results.map((r) => (
+            <a key={r.url} href={r.url} target="_blank" rel="noreferrer" title="查看原图 / 复制链接">
+              <img src={r.url} alt={`提交结果 #${r.id ?? ""}`} />
+              <span>#{r.id ?? "…"}</span>
+            </a>
           ))}
-        </ul>
+        </div>
         <div className="SuccessActions">
+          <a className="SuccessGalleryLink" href="/gallery">
+            <Button variant="primary">查看风采墙</Button>
+          </a>
           <Button variant="primary" onClick={() => setSubmitted(false)}>
             继续上传
           </Button>
