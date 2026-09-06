@@ -3,6 +3,7 @@ import "minecraft-react-ui/style.css";
 import "../styles/global.css";
 import Navbar from "../components/Navbar.astro";
 import Footer from "../components/Footer.astro";
+import { SITE_CONFIG } from "../config/site";
 
 interface Props {
   title?: string;
@@ -14,7 +15,7 @@ interface Props {
 }
 
 const {
-  title = "方块嘉年华 · MyGO!!!!! × 山商煤炭社",
+  title = `${SITE_CONFIG.name} · ${SITE_CONFIG.coHost}`,
   soundPrompt = true,
 } = Astro.props;
 ---
@@ -25,10 +26,7 @@ const {
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" type="image/png" href="/img/items/golden_apple.png" />
-    <meta
-      name="description"
-      content="MyGO!!!!! × 山商煤炭社 方块嘉年华第一期：报名、随机组队、晒图提交"
-    />
+    <meta name="description" content={SITE_CONFIG.description} />
     <title>{title}</title>
   </head>
   <body data-sound-defer={soundPrompt ? undefined : "1"}>

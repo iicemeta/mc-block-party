@@ -1,7 +1,9 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import HeroCta from "../react/HeroCta";
+import { SITE_CONFIG } from "../config/site";
 
+// 装饰性漂浮方块（位置/尺寸等视觉参数，非文案，保留在组件内）
 const heroBlocks = [
   { src: "/img/items/diamond.png", size: 56, left: "6%", top: "18%", d: "7s", delay: "0s", blur: false, rot: "-8deg" },
   { src: "/img/items/coal.png", size: 44, left: "14%", top: "68%", d: "6s", delay: "1.2s", blur: false, rot: "10deg" },
@@ -13,33 +15,8 @@ const heroBlocks = [
   { src: "/img/items/grass_block.png", size: 72, left: "90%", top: "70%", d: "9s", delay: "0s", blur: true, rot: "-6deg" },
 ];
 
-const clubs = [
-  {
-    name: "MyGO!!!!!",
-    color: "ctech",
-    icon: "/img/bdstar.svg",
-    qr: "/qr/ctech-club.svg",
-    desc: "写代码、玩硬件、整活 AI。这次我们负责服务器与红石全自动化！",
-    tag: "扫码进①群",
-  },
-  {
-    name: "山商煤炭社",
-    color: "coal",
-    icon: "/img/items/coal_block.png",
-    qr: "/qr/coal-club.svg",
-    desc: "专业挖矿三十年，从煤炭到下界合金。这次我们负责把矿道挖到你家！",
-    tag: "扫码进②群",
-  },
-];
-
-const steps = [
-  { icon: "/img/items/diamond.png", title: "① 登记报名", desc: "登录后填写信息，账号自动绑定" },
-  { icon: "/img/items/tnt.png", title: "② 随机组队", desc: "TNT 点燃，命运分组" },
-  { icon: "/img/items/crafting_table.png", title: "③ 联谊开黑", desc: "共建、竞速、团战" },
-  { icon: "/img/items/ender_pearl.png", title: "④ 晒图提交", desc: "高光时刻进摄影展" },
-];
-
-const marqueeText = "MyGO!!!!! × 山商煤炭社 · 方块嘉年华第一期 ·  ";
+const { hero, clubs, steps } = SITE_CONFIG;
+const marqueeText = SITE_CONFIG.marquee;
 ---
 
 <Layout>
@@ -55,14 +32,13 @@ const marqueeText = "MyGO!!!!! × 山商煤炭社 · 方块嘉年华第一期 ·
       />
     ))}
     <div class="Hero-inner">
-      <p class="Hero-kicker">CTA x SDTBUcraft</p>
-      <h1 class="Hero-title">方块嘉年华</h1>
-      <p class="Hero-sub">
-        每一次的联机，都是心的连通。每一次的方块落下，都是连接世界的精彩。
-      </p>
+      <p class="Hero-kicker">{hero.kicker}</p>
+      <h1 class="Hero-title">{hero.title}</h1>
+      <p class="Hero-sub">{hero.tagline}</p>
       <div class="Hero-tags">
-        <span class="mc-panel TagBox">时间：本周六 19:00 - 23:00</span>
-        <span class="mc-panel TagBox">地点：方块嘉年华服务器（进群获取 IP）</span>
+        {hero.tags.map((t) => (
+          <span class="mc-panel TagBox">{t}</span>
+        ))}
       </div>
       <div class="Hero-cta">
         <HeroCta client:load />
