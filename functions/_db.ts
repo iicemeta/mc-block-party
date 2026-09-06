@@ -1,5 +1,28 @@
 /// <reference types="@cloudflare/workers-types" />
 
+/**
+ * isolate 生命周期内的 DDL 结果缓存：同一 D1 绑定只执行一次建表 / 补列，
+ * 避免每个请求都多出 2-3 次 D1 往返。失败时清除缓存，下次请求可重试。
+ */
+const schemaReady = new WeakMap<D1Database, Map<string, Promise<void>>>();
+
+function ensureOnce(db: D1Database, key: string, run: () => Promise<void>): Promise<void> {
+  let cache = schemaReady.get(db);
+  if (!cache) {
+    cache = new Map();
+    schemaReady.set(db, cache);
+  }
+  let pending = cache.get(key);
+  if (!pending) {
+    pending = run().catch((e) => {
+      cache!.delete(key);
+      throw e;
+    });
+    cache.set(key, pending);
+  }
+  return pending;
+}
+
 const REGISTRATIONS_CREATE_DDL = `CREATE TABLE IF NOT EXISTS registrations (
   id INTEGER PRIMARY KEY,
   uuid TEXT NOT NULL UNIQUE,
@@ -20,15 +43,17 @@ const ADD_AUTH_ID_DDL = "ALTER TABLE registrations ADD COLUMN auth_id TEXT";
 const AUTH_ID_INDEX_DDL =
   "CREATE UNIQUE INDEX IF NOT EXISTS idx_registrations_auth_id ON registrations (auth_id)";
 
-/** 幂等确保 registrations 表结构可用（新库建表 / 存量库补列与索引） */
-export async function ensureRegistrationsSchema(db: D1Database): Promise<void> {
-  await db.prepare(REGISTRATIONS_CREATE_DDL).run();
-  try {
-    await db.prepare(ADD_AUTH_ID_DDL).run();
-  } catch {
-    /* duplicate column name：列已存在，忽略 */
-  }
-  await db.prepare(AUTH_ID_INDEX_DDL).run();
+/** 幂等确保 registrations 表结构可用（新库建表 / 存量库补列与索引），结果按绑定缓存 */
+export function ensureRegistrationsSchema(db: D1Database): Promise<void> {
+  return ensureOnce(db, "registrations", async () => {
+    await db.prepare(REGISTRATIONS_CREATE_DDL).run();
+    try {
+      await db.prepare(ADD_AUTH_ID_DDL).run();
+    } catch {
+      /* duplicate column name：列已存在，忽略 */
+    }
+    await db.prepare(AUTH_ID_INDEX_DDL).run();
+  });
 }
 
 const ADMINS_CREATE_DDL = `CREATE TABLE IF NOT EXISTS admins (
@@ -38,9 +63,9 @@ const ADMINS_CREATE_DDL = `CREATE TABLE IF NOT EXISTS admins (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 )`;
 
-/** 幂等确保 admins 表结构可用 */
-export async function ensureAdminsSchema(db: D1Database): Promise<void> {
-  await db.prepare(ADMINS_CREATE_DDL).run();
+/** 幂等确保 admins 表结构可用，结果按绑定缓存 */
+export function ensureAdminsSchema(db: D1Database): Promise<void> {
+  return ensureOnce(db, "admins", () => db.prepare(ADMINS_CREATE_DDL).run().then(() => undefined));
 }
 
 const USERS_CREATE_DDL = `CREATE TABLE IF NOT EXISTS users (
@@ -51,9 +76,29 @@ const USERS_CREATE_DDL = `CREATE TABLE IF NOT EXISTS users (
   last_seen_at TEXT NOT NULL DEFAULT (datetime('now'))
 )`;
 
-/** 幂等确保 users 表结构可用 */
-export async function ensureUsersSchema(db: D1Database): Promise<void> {
-  await db.prepare(USERS_CREATE_DDL).run();
+/** 幂等确保 users 表结构可用，结果按绑定缓存 */
+export function ensureUsersSchema(db: D1Database): Promise<void> {
+  return ensureOnce(db, "users", () => db.prepare(USERS_CREATE_DDL).run().then(() => undefined));
+}
+
+const SHOWCASE_CREATE_DDL = `CREATE TABLE IF NOT EXISTS showcase (
+  id INTEGER PRIMARY KEY,
+  registration_uuid TEXT NOT NULL,
+  mc_id TEXT NOT NULL,
+  image_url TEXT NOT NULL,
+  caption TEXT NOT NULL DEFAULT '',
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+)`;
+
+const SHOWCASE_INDEX_DDL =
+  "CREATE INDEX IF NOT EXISTS idx_showcase_created ON showcase(created_at DESC)";
+
+/** 幂等确保 showcase 表结构可用，结果按绑定缓存 */
+export function ensureShowcaseSchema(db: D1Database): Promise<void> {
+  return ensureOnce(db, "showcase", async () => {
+    await db.prepare(SHOWCASE_CREATE_DDL).run();
+    await db.prepare(SHOWCASE_INDEX_DDL).run();
+  });
 }
 
 export type UserUpsert = {

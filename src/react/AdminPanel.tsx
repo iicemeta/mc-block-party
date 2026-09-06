@@ -38,26 +38,31 @@ function AdminPanelInner() {
   const [error, setError] = useState("");
 
   const load = useCallback(async () => {
-    const accessToken = await acquireToken();
-    if (!accessToken) {
+    try {
+      const accessToken = await acquireToken();
+      if (!accessToken) {
+        setPhase("error");
+        setErrorMessage("登录状态已过期，请刷新页面重新登录");
+        return;
+      }
+      const res = await fetch("/api/admin/overview", {
+        headers: { authorization: `Bearer ${accessToken}` },
+      });
+      const body = (await res.json().catch(() => null)) as Overview | null;
+      if (res.status === 403) {
+        setPhase("denied");
+        return;
+      }
+      if (res.ok && body?.ok) {
+        setData(body);
+        setPhase("ready");
+      } else {
+        setPhase("error");
+        setErrorMessage(body?.message ?? `载入失败（${res.status}）`);
+      }
+    } catch {
       setPhase("error");
-      setErrorMessage("登录状态已过期，请刷新页面重新登录");
-      return;
-    }
-    const res = await fetch("/api/admin/overview", {
-      headers: { authorization: `Bearer ${accessToken}` },
-    });
-    const body = (await res.json().catch(() => null)) as Overview | null;
-    if (res.status === 403) {
-      setPhase("denied");
-      return;
-    }
-    if (res.ok && body?.ok) {
-      setData(body);
-      setPhase("ready");
-    } else {
-      setPhase("error");
-      setErrorMessage(body?.message ?? `载入失败（${res.status}）`);
+      setErrorMessage("网络异常，请刷新重试");
     }
   }, [acquireToken]);
 

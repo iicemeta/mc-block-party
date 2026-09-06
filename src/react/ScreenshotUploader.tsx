@@ -123,7 +123,7 @@ function ScreenshotUploaderInner() {
   };
 
   const setCaption = (id: string, caption: string) => {
-    setShots((prev) => prev.map((s) => ({ ...s, caption })));
+    setShots((prev) => prev.map((s) => (s.id === id ? { ...s, caption } : s)));
   };
 
   const onSubmit = async () => {

@@ -1,4 +1,8 @@
-import { logout, triggerLogin } from "@melody-auth/web";
+import {
+  exchangeTokenByRefreshToken,
+  logout,
+  triggerLogin,
+} from "@melody-auth/web";
 import { useEffect, useState } from "react";
 import {
   authConfig,
@@ -15,7 +19,6 @@ import {
   stashReturnTo,
   type CachedAdminRole,
 } from "../lib/auth";
-import { exchangeTokenByRefreshToken } from "@melody-auth/web";
 
 export default function AuthStatus() {
   const [account, setAccount] = useState<ReturnType<typeof readAccount>>(null);

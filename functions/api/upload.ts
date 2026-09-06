@@ -1,7 +1,7 @@
 /// <reference types="@cloudflare/workers-types" />
 import { isAuthError, requireAuth, type AuthEnv } from "../_auth";
-import { ensureRegistrationsSchema } from "../_db";
-import { errMsg, resolveD1 } from "../_lib";
+import { ensureRegistrationsSchema, ensureShowcaseSchema } from "../_db";
+import { resolveD1 } from "../_lib";
 
 export type Env = AuthEnv & {
   IMG_UPLOAD_URL?: string;
@@ -17,17 +17,6 @@ const json = (data: unknown, status = 200) =>
   });
 
 const bad = (message: string, status = 400) => json({ ok: false, message }, status);
-
-const CREATE_SHOWCASE_DDL = `CREATE TABLE IF NOT EXISTS showcase (
-  id INTEGER PRIMARY KEY,
-  registration_uuid TEXT NOT NULL,
-  mc_id TEXT NOT NULL,
-  image_url TEXT NOT NULL,
-  caption TEXT NOT NULL DEFAULT '',
-  created_at TEXT NOT NULL DEFAULT (datetime('now'))
-)`;
-
-const CREATE_SHOWCASE_INDEX = `CREATE INDEX IF NOT EXISTS idx_showcase_created ON showcase(created_at DESC)`;
 
 type UpstreamResult = {
   url?: string;
@@ -100,7 +89,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     mcId = reg.mc_id;
   } catch (e) {
     console.error("upload d1 error", e);
-    return bad(`数据库查询失败：${errMsg(e)}`, 500);
+    return bad("数据库查询失败，请稍后重试", 500);
   }
 
   const results: { name: string; url: string }[] = [];
@@ -120,24 +109,25 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
       results.push({ name: f.name, url: data.url });
     }
   } catch (e) {
-    return bad(`图床连接失败：${errMsg(e)}`, 502);
+    console.error("upload upstream error", e);
+    return bad("图床连接失败，请稍后重试", 502);
   }
 
   try {
-    await db.prepare(CREATE_SHOWCASE_DDL).run();
-    await db.prepare(CREATE_SHOWCASE_INDEX).run();
-    for (let i = 0; i < results.length; i++) {
-      await db
-        .prepare(
-          `INSERT INTO showcase (registration_uuid, mc_id, image_url, caption)
-           VALUES (?1, ?2, ?3, ?4)`
-        )
-        .bind(registrationUuid, mcId, results[i].url, (captions[i] ?? "").slice(0, 100))
-        .run();
-    }
+    await ensureShowcaseSchema(db);
+    await db.batch(
+      results.map((r, i) =>
+        db
+          .prepare(
+            `INSERT INTO showcase (registration_uuid, mc_id, image_url, caption)
+             VALUES (?1, ?2, ?3, ?4)`
+          )
+          .bind(registrationUuid, mcId, r.url, (captions[i] ?? "").slice(0, 100))
+      )
+    );
   } catch (e) {
     console.error("upload d1 error", e);
-    return bad(`图片已上传，但风采展示记录写入失败：${errMsg(e)}`, 500);
+    return bad("图片已上传，但风采展示记录写入失败，请稍后重试", 500);
   }
 
   return json({ ok: true, mcId, results });
