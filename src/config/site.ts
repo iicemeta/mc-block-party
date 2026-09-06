@@ -45,7 +45,7 @@ export const SITE_CONFIG = {
   /** 主页 Hero 区 */
   hero: {
     /** 大标题上方的小字 */
-    kicker: "CTA x SDTBUcraft",
+    kicker: "Minecraft Block Party",
     /** 大标题 */
     title: "方块嘉年华",
     /** 欢迎语 / 标语 */
