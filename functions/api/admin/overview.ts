@@ -28,8 +28,12 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
     const countRow = await db
       .prepare("SELECT COUNT(*) AS c FROM registrations")
       .first<{ c: number }>();
+    // 角色统一存于 users.role；部分索引 idx_users_role 使该查询只扫管理员行
     const admins = await db
-      .prepare("SELECT auth_id, email, role, created_at FROM admins ORDER BY created_at ASC")
+      .prepare(
+        `SELECT auth_id, email, role, created_at FROM users
+         WHERE role IS NOT NULL ORDER BY created_at ASC`
+      )
       .all<AdminRow>();
 
     return json({

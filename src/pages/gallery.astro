@@ -4,12 +4,12 @@ import ScreenshotUploader from "../react/ScreenshotUploader";
 import ShowcaseGallery from "../react/ShowcaseGallery";
 ---
 
-<Layout title="摄影展 · 晒出你的高光 · MC 联谊嘉年华">
+<Layout title="摄影展 · 晒出你的高光 · 方块嘉年华">
   <div class="page-header">
     <img src="/img/items/ender_pearl.png" alt="" class="pixel" />
     <div>
       <h1>摄影展 · 晒出你的高光</h1>
-      <p>登录后即可提交报名时登记的 MC ID 的精彩截图，我们会选优秀作品放进展区</p>
+      <p>风采展示对所有访客开放浏览；登录并报名后即可提交你的精彩截图</p>
     </div>
   </div>
 
@@ -56,10 +56,35 @@ import ShowcaseGallery from "../react/ShowcaseGallery";
     object-fit: contain;
   }
 
+  .ShowcaseMeta {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .ShowcaseId {
+    font-size: 0.72rem;
+    line-height: 1;
+    color: var(--club-coal);
+    background: #0c0c10;
+    padding: 4px 8px;
+    box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.12);
+  }
+
   .ShowcaseTitle {
     font-size: 1rem;
     color: var(--club-ctech);
     text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.6);
+  }
+
+  /* 管理员可见的学号后缀（服务端判定，普通访客拿不到该字段）；配色与 ShowcaseCaption 一致 */
+  .ShowcaseSid {
+    font-size: 0.85rem;
+    color: var(--text-color);
+    text-shadow: none;
+    opacity: 0.75;
   }
 
   .ShowcaseCaption {

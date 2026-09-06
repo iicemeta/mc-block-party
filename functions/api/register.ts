@@ -1,7 +1,7 @@
 /// <reference types="@cloudflare/workers-types" />
 import { isAuthError, requireAuth, type AuthEnv } from "../_auth";
 import { ensureRegistrationsSchema } from "../_db";
-import { errMsg, resolveD1 } from "../_lib";
+import { resolveD1 } from "../_lib";
 
 export type Env = AuthEnv & {
   IMG_UPLOAD_URL?: string;
@@ -30,6 +30,10 @@ const bad = (message: string, status = 400) => json({ ok: false, message }, stat
 function asText(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
 }
+
+/** D1 唯一约束冲突识别（错误信息含表名.列名），用于并发提交竞态兜底 */
+const isUniqueViolation = (e: unknown, column: "auth_id" | "student_id"): boolean =>
+  e instanceof Error && e.message.includes(`registrations.${column}`);
 
 type ParsedFields = {
   name: string;
@@ -117,13 +121,39 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
 
     if (!existing) {
       const uuid = crypto.randomUUID();
-      await db
-        .prepare(
-          `INSERT INTO registrations (uuid, auth_id, name, student_id, college, qq, mc_id, skills)
-           VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)`
-        )
-        .bind(uuid, authId, name, studentId, college, qq, mcId, JSON.stringify(skills))
-        .run();
+      try {
+        await db
+          .prepare(
+            `INSERT INTO registrations (uuid, auth_id, name, student_id, college, qq, mc_id, skills)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)`
+          )
+          .bind(uuid, authId, name, studentId, college, qq, mcId, JSON.stringify(skills))
+          .run();
+      } catch (e) {
+        // 并发提交竞态兜底：唯一约束冲突时按占用方给出友好提示，而非 500
+        if (isUniqueViolation(e, "auth_id")) {
+          return json(
+            {
+              ok: false,
+              code: "duplicate_submit",
+              message: "检测到重复提交：你的报名记录刚刚已创建，请刷新页面查看。",
+            },
+            409
+          );
+        }
+        if (isUniqueViolation(e, "student_id")) {
+          return json(
+            {
+              ok: false,
+              code: "already_bound",
+              message:
+                "该学号已绑定另一个账号，无法重复报名。如确为你本人的报名，请联系活动负责人处理。",
+            },
+            409
+          );
+        }
+        throw e;
+      }
       return json({ ok: true, created: true, claimed: false });
     }
 
@@ -151,6 +181,6 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     return json({ ok: true, created: false, claimed: true });
   } catch (e) {
     console.error("d1 error", e);
-    return bad(`数据库写入失败：${errMsg(e)}`, 500);
+    return bad("数据库写入失败，请稍后重试", 500);
   }
 };

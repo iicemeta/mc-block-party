@@ -1,7 +1,7 @@
 /// <reference types="@cloudflare/workers-types" />
 import { isAuthError, requireAuth, type AuthEnv } from "../_auth";
 import { ensureRegistrationsSchema } from "../_db";
-import { errMsg, resolveD1 } from "../_lib";
+import { resolveD1 } from "../_lib";
 
 export type Env = AuthEnv & Record<string, unknown>;
 
@@ -65,6 +65,6 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
     });
   } catch (e) {
     console.error("d1 error", e);
-    return bad(`数据库查询失败：${errMsg(e)}`, 500);
+    return bad("数据库查询失败，请稍后重试", 500);
   }
 };

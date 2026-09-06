@@ -6,10 +6,16 @@ import Footer from "../components/Footer.astro";
 
 interface Props {
   title?: string;
+  /**
+   * 是否允许弹出首访音效确认框。加载即会被重定向的瞬态页（登录回跳、旧登记页）
+   * 应关闭：弹窗会被跳转打断而闪现失效；其余页面保持默认开启。
+   */
+  soundPrompt?: boolean;
 }
 
 const {
-  title = "MC 联谊嘉年华 · MyGO!!!!! × 山商煤炭社",
+  title = "方块嘉年华 · MyGO!!!!! × 山商煤炭社",
+  soundPrompt = true,
 } = Astro.props;
 ---
 
@@ -21,11 +27,11 @@ const {
     <link rel="icon" type="image/png" href="/img/items/golden_apple.png" />
     <meta
       name="description"
-      content="MyGO!!!!! × 山商煤炭社 MC 联谊活动：报名、随机组队、晒图提交"
+      content="MyGO!!!!! × 山商煤炭社 方块嘉年华第一期：报名、随机组队、晒图提交"
     />
     <title>{title}</title>
   </head>
-  <body>
+  <body data-sound-defer={soundPrompt ? undefined : "1"}>
     <Navbar />
     <main class="Page">
       <slot />

@@ -8,7 +8,7 @@
 ## 一、Melody Auth Admin Panel 配置（一次性）
 
 1. **Apps → Create App**
-   - Name：`MC 联谊`（随意）
+   - Name：`方块嘉年华`（随意）
    - Type：**SPA**
    - Redirect URIs（两条都要加）：
      - `https://<你的生产域名>/auth/callback`

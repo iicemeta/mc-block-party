@@ -35,21 +35,15 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     return json({ ok: false, message: "该邮箱是你自己的超级管理员账号" }, 400);
   }
 
-  const superEmail = (env.SUPER_ADMIN_EMAIL ?? "").trim().toLowerCase();
-  if (superEmail && email === superEmail) {
-    return json({ ok: false, message: "该邮箱已是超级管理员" }, 400);
-  }
-
   const db = resolveD1(env);
   if (!db) return json({ ok: false, message: "数据库绑定不可用" }, 500);
 
-  // 以本站 users 表为准：只有登录过本站的用户才可能被设置为管理员
-  let authId: string;
+  // 角色统一存于 users.role：只有登录过本站的用户才可能被设置为管理员
   try {
     const user = await db
-      .prepare("SELECT auth_id FROM users WHERE lower(email) = ?1")
+      .prepare("SELECT auth_id, role FROM users WHERE lower(email) = ?1")
       .bind(email)
-      .first<{ auth_id: string }>();
+      .first<{ auth_id: string; role: string | null }>();
     if (!user) {
       return json(
         {
@@ -59,31 +53,17 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
         404
       );
     }
-    authId = user.auth_id;
-  } catch (e) {
-    console.error("admin add d1 error", e);
-    return json({ ok: false, message: `数据库查询失败：${errMsg(e)}` }, 500);
-  }
-
-  try {
-    const existing = await db
-      .prepare("SELECT role FROM admins WHERE auth_id = ?1")
-      .bind(authId)
-      .first<{ role: string }>();
-    if (existing) {
-      return json(
-        { ok: false, message: `该邮箱已经是管理员（角色：${existing.role === "super" ? "超级管理员" : "管理员"}）` },
-        409
-      );
+    if (user.role === "super") {
+      return json({ ok: false, message: "该邮箱已是超级管理员" }, 409);
     }
-    await db
-      .prepare("INSERT INTO admins (auth_id, email, role) VALUES (?1, ?2, 'admin')")
-      .bind(authId, email)
-      .run();
-    return json({ ok: true, authId, email });
+    if (user.role === "admin") {
+      return json({ ok: false, message: "该邮箱已经是管理员" }, 409);
+    }
+    await db.prepare("UPDATE users SET role = 'admin' WHERE auth_id = ?1").bind(user.auth_id).run();
+    return json({ ok: true, authId: user.auth_id, email });
   } catch (e) {
     console.error("admin add d1 error", e);
-    return json({ ok: false, message: `数据库写入失败：${errMsg(e)}` }, 500);
+    return json({ ok: false, message: `数据库操作失败：${errMsg(e)}` }, 500);
   }
 };
 
@@ -104,14 +84,17 @@ export const onRequestDelete: PagesFunction<Env> = async ({ request, env }) => {
 
   try {
     const row = await db
-      .prepare("SELECT role, email FROM admins WHERE auth_id = ?1")
+      .prepare("SELECT role, email FROM users WHERE auth_id = ?1")
       .bind(authId)
-      .first<{ role: string; email: string }>();
-    if (!row) return json({ ok: false, message: "该管理员不存在" }, 404);
+      .first<{ role: string | null; email: string }>();
+    if (!row || !row.role) return json({ ok: false, message: "该管理员不存在" }, 404);
     if (row.role === "super") {
       return json({ ok: false, message: "不能移除超级管理员" }, 403);
     }
-    await db.prepare("DELETE FROM admins WHERE auth_id = ?1").bind(authId).run();
+    await db
+      .prepare("UPDATE users SET role = NULL WHERE auth_id = ?1 AND role = 'admin'")
+      .bind(authId)
+      .run();
     return json({ ok: true, email: row.email });
   } catch (e) {
     console.error("admin remove d1 error", e);

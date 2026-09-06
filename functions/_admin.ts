@@ -1,6 +1,6 @@
 /// <reference types="@cloudflare/workers-types" />
 import { isAuthError, requireAuth, type AuthEnv } from "./_auth";
-import { ensureAdminsSchema } from "./_db";
+import { ensureUsersSchema } from "./_db";
 import { resolveD1 } from "./_lib";
 
 export type AdminEnv = AuthEnv & {
@@ -56,7 +56,10 @@ export async function fetchUserInfo(env: AdminEnv, accessToken: string): Promise
   }
 }
 
-/** 依据 admins 表 + SUPER_ADMIN_EMAIL 环境变量判定角色（含超管自动晋升） */
+/**
+ * 依据 users.role + SUPER_ADMIN_EMAIL 环境变量判定角色（含超管自动晋升）。
+ * 角色统一存于 users.role（NULL=普通 / 'admin' / 'super'），单表主键点查即可完成判定。
+ */
 export async function determineRole(
   db: D1Database,
   env: AdminEnv,
@@ -66,21 +69,21 @@ export async function determineRole(
   const superEmail = (env.SUPER_ADMIN_EMAIL ?? "").trim().toLowerCase();
 
   const row = await db
-    .prepare("SELECT auth_id, email, role, created_at FROM admins WHERE auth_id = ?1")
+    .prepare("SELECT role FROM users WHERE auth_id = ?1")
     .bind(authId)
-    .first<AdminRow>();
+    .first<{ role: string | null }>();
 
   if (row?.role === "super") return "super";
 
   if (superEmail && email.toLowerCase() === superEmail) {
-    if (!row) {
-      await db
-        .prepare("INSERT INTO admins (auth_id, email, role) VALUES (?1, ?2, 'super')")
-        .bind(authId, email)
-        .run();
-    } else {
-      await db.prepare("UPDATE admins SET role = 'super' WHERE auth_id = ?1").bind(authId).run();
-    }
+    // 原子晋升：无档案则建档（兜底），有档案则提权为超级管理员
+    await db
+      .prepare(
+        `INSERT INTO users (auth_id, email, nickname, role) VALUES (?1, ?2, ?3, 'super')
+         ON CONFLICT(auth_id) DO UPDATE SET role = 'super', email = ?2`
+      )
+      .bind(authId, email, email)
+      .run();
     return "super";
   }
 
@@ -90,7 +93,7 @@ export async function determineRole(
 
 /**
  * 管理身份判定：JWT 验签 → userinfo 取邮箱 → 判定角色（非管理员 role 为 null）。
- * 超级管理员由 SUPER_ADMIN_EMAIL 环境变量引导，首次访问自动写入 admins 表。
+ * 超级管理员由 SUPER_ADMIN_EMAIL 环境变量引导，首次访问自动晋升 users.role。
  */
 export async function resolveAdminRole(
   request: Request,
@@ -104,7 +107,7 @@ export async function resolveAdminRole(
   const db = resolveD1(env);
   if (!db) return { error: json({ ok: false, message: "数据库绑定不可用" }, 500) };
 
-  await ensureAdminsSchema(db);
+  await ensureUsersSchema(db);
 
   const info = await fetchUserInfo(env, auth.token);
   if (!info || info.authId !== auth.authId) {

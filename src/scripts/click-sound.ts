@@ -212,7 +212,26 @@ function showSoundPrompt(): void {
 }
 
 // 首次用户手势兜底初始化（即使用户没点弹窗，点了页面其它地方也能激活音频）
-window.addEventListener("pointerdown", () => initAudio(), { once: true, capture: true });
+let promptShown = false;
+
+/**
+ * 弹窗在首次用户手势时弹出（而非页面加载即弹）：
+ * /me、/gallery 等页未登录会在加载后立刻跳转 auth，加载即弹会被重定向打断，
+ * 导致弹窗丢失、音频手势激活落空。改为手势触发后，跳转前无人点击则不弹，
+ * 登录回来后的第一次点击即可稳定弹出并在同一手势内激活音频。
+ * 弹窗未作答时每次加载自动重试（hasSoundChoice 守卫），被打断也能自愈。
+ */
+function onFirstGesture(): void {
+  initAudio();
+  if (promptShown) return;
+  // 瞬态页（登录回跳 / 旧登记页跳转）加载即会被 replace，永不打扰
+  if (document.documentElement.hasAttribute("data-sound-defer")) return;
+  promptShown = true;
+  showSoundPrompt();
+}
+
+window.addEventListener("pointerdown", onFirstGesture, { once: true, capture: true });
+window.addEventListener("keydown", onFirstGesture, { once: true, capture: true });
 
 let lastClickGesture = 0;
 
@@ -228,6 +247,10 @@ document.addEventListener(
 
     // 音效选择弹窗由自己的处理器负责，避免双播 / 误切换
     if (e.target.closest(".SoundPrompt")) return;
+
+    // 弹窗打开期间为模态交互（aria-modal）：弹出弹窗的那次点击不再触发
+    // 音效 / 静音切换 / 导航，先答完选择再继续操作
+    if (document.querySelector(".SoundPrompt")) return;
 
     const hit = e.target.closest(SOUNDABLE);
     if (!hit) return;
@@ -275,7 +298,7 @@ window.__mcSfx = {
   ctxState: () => ctx?.state ?? "none",
 };
 
-// 页面加载：仅预解码音频（OfflineAudioContext，无手势要求），不创建 AudioContext
+// 页面加载：仅预解码音频（OfflineAudioContext，无手势要求），不创建 AudioContext；
+// 音效选择弹窗延后到首次用户手势时弹出（见 onFirstGesture）
 (Object.keys(SOUNDS) as SfxName[]).forEach(fetchBuffer);
 applyMuteUI();
-showSoundPrompt();
