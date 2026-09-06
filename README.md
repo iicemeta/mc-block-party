@@ -2,6 +2,12 @@
 
 「MyGO!!!!! × Yuzusoft」方块联谊活动的站点：报名登记、随机组队抽奖、风采晒图墙与管理后台。
 
+## 一键部署
+
+[![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/iicemeta/mc-block-party)
+
+点击按钮按向导授权 GitHub 仓库并创建 Worker 即可；前端构建变量已随仓库的 `.env.production` 提供，运行时变量由仓库内 `wrangler.jsonc` 定义（敏感变量部署后在仪表盘 Settings → Variables 中补充）。
+
 基于 **Astro + React** 构建，部署在 **Cloudflare Workers**（`@astrojs/cloudflare` 适配器）：
 
 - 页面全部预渲染为静态资源（免费、不计 Workers 请求）
