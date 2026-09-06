@@ -1,8 +1,9 @@
-/// <reference types="@cloudflare/workers-types" />
-import { requireAdmin, type AdminEnv } from "../../_admin";
-import { errMsg, resolveD1 } from "../../_lib";
+import type { APIContext } from "astro";
+import { env } from "cloudflare:workers";
+import { requireAdmin } from "../../../server/_admin";
+import { errMsg, resolveD1 } from "../../../server/_lib";
 
-export type Env = AdminEnv & Record<string, unknown>;
+export const prerender = false;
 
 const json = (data: unknown, status = 200) =>
   new Response(JSON.stringify(data), {
@@ -13,7 +14,8 @@ const json = (data: unknown, status = 200) =>
 type AddBody = { email?: unknown };
 
 /** 超级管理员添加管理员（仅限 super 角色） */
-export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
+export async function POST(context: APIContext): Promise<Response> {
+  const request = context.request;
   const admin = await requireAdmin(request, env);
   if ("error" in admin) return admin.error;
   if (admin.role !== "super") {
@@ -65,10 +67,11 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     console.error("admin add d1 error", e);
     return json({ ok: false, message: `数据库操作失败：${errMsg(e)}` }, 500);
   }
-};
+}
 
 /** 超级管理员移除管理员（仅限 super 角色，且不能移除超级管理员） */
-export const onRequestDelete: PagesFunction<Env> = async ({ request, env }) => {
+export async function DELETE(context: APIContext): Promise<Response> {
+  const request = context.request;
   const admin = await requireAdmin(request, env);
   if ("error" in admin) return admin.error;
   if (admin.role !== "super") {
@@ -100,4 +103,4 @@ export const onRequestDelete: PagesFunction<Env> = async ({ request, env }) => {
     console.error("admin remove d1 error", e);
     return json({ ok: false, message: `数据库操作失败：${errMsg(e)}` }, 500);
   }
-};
+}

@@ -1,0 +1,97 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { SITE_CONFIG } from "../config/site";
+
+const blocks = [
+  { src: "/img/items/tnt.png", size: 56, left: "10%", top: "22%", d: "7s", delay: "0s", blur: false, rot: "-8deg" },
+  { src: "/img/items/redstone_block.png", size: 48, left: "22%", top: "68%", d: "6s", delay: "1.1s", blur: false, rot: "10deg" },
+  { src: "/img/items/ender_pearl.png", size: 40, left: "78%", top: "20%", d: "5.5s", delay: "0.5s", blur: false, rot: "0deg" },
+  { src: "/img/items/coal.png", size: 40, left: "86%", top: "64%", d: "7s", delay: "0.8s", blur: true, rot: "-12deg" },
+];
+---
+
+<Layout title={`服务器开摆了 · ${SITE_CONFIG.name}`} soundPrompt={false}>
+  <section class="ErrPage">
+    {blocks.map((b) => (
+      <img
+        src={b.src}
+        alt=""
+        width={b.size}
+        height={b.size}
+        class:list={["pixel", "float-block", { blur: b.blur }]}
+        style={`left:${b.left};top:${b.top};--d:${b.d};--delay:${b.delay};--rot:${b.rot};`}
+      />
+    ))}
+    <div class="mc-panel ErrPanel">
+      <p class="ErrCode" aria-hidden="true">
+        <img src="/img/items/tnt.png" alt="" width={40} height={40} class="pixel" />
+        500
+      </p>
+      <h1 class="ErrTitle">苦力怕把服务器炸了</h1>
+      <p class="ErrDesc">服务端出了点问题，稍后再试一次；如果反复出现请联系管理员。</p>
+      <div class="ErrActions">
+        <a class="ErrBtn primary" href="/">
+          <img src="/img/items/grass_block.png" alt="" width={18} height={18} class="pixel" />
+          回到主页
+        </a>
+        <a class="ErrBtn" href="/lottery">
+          <img src="/img/items/tnt.png" alt="" width={18} height={18} class="pixel" />
+          去随机组队
+        </a>
+      </div>
+    </div>
+  </section>
+</Layout>
+
+<style>
+  .ErrPage {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+    padding: 3rem 1rem;
+  }
+  .ErrPanel {
+    position: relative;
+    z-index: 1;
+    max-width: 480px;
+    width: 100%;
+    padding: 2.2rem 2rem;
+    text-align: center;
+  }
+  .ErrCode {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin: 0 0 0.6rem;
+    font-size: 3rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    color: var(--fg, inherit);
+  }
+  .ErrTitle {
+    margin: 0 0 0.5rem;
+    font-size: 1.3rem;
+  }
+  .ErrDesc {
+    margin: 0 0 1.6rem;
+    opacity: 0.75;
+  }
+  .ErrActions {
+    display: flex;
+    gap: 0.8rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .ErrBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.6rem 1.1rem;
+  }
+  .ErrBtn.primary {
+    font-weight: 700;
+  }
+</style>

@@ -1,14 +1,11 @@
-/// <reference types="@cloudflare/workers-types" />
-import {
-  determineRole,
-  fetchUserInfo,
-  type AdminEnv,
-} from "../../_admin";
-import { ensureUsersSchema, upsertUser } from "../../_db";
-import { isAuthError, requireAuth } from "../../_auth";
-import { errMsg, resolveD1 } from "../../_lib";
+import type { APIContext } from "astro";
+import { env } from "cloudflare:workers";
+import { determineRole, fetchUserInfo } from "../../../server/_admin";
+import { ensureUsersSchema, upsertUser } from "../../../server/_db";
+import { isAuthError, requireAuth } from "../../../server/_auth";
+import { errMsg, resolveD1 } from "../../../server/_lib";
 
-export type Env = AdminEnv & Record<string, unknown>;
+export const prerender = false;
 
 const json = (data: unknown, status = 200) =>
   new Response(JSON.stringify(data), {
@@ -20,7 +17,8 @@ const json = (data: unknown, status = 200) =>
  * 登录会话同步：把服务端可信的邮箱 / 昵称写入 users 表（每会话由前端触发一次），
  * 同时返回管理员角色判定（供导航栏决定是否展示管理入口）。
  */
-export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
+export async function POST(context: APIContext): Promise<Response> {
+  const request = context.request;
   const auth = await requireAuth(request, env);
   if (isAuthError(auth)) {
     const status = auth.error.status;
@@ -56,4 +54,4 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     console.error("user sync d1 error", e);
     return json({ ok: false, message: `数据库写入失败：${errMsg(e)}` }, 500);
   }
-};
+}

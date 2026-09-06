@@ -1,13 +1,10 @@
-/// <reference types="@cloudflare/workers-types" />
-import {
-  requireAdmin,
-  type AdminEnv,
-  type AdminRow,
-} from "../../_admin";
-import { ensureRegistrationsSchema } from "../../_db";
-import { errMsg, resolveD1 } from "../../_lib";
+import type { APIContext } from "astro";
+import { env } from "cloudflare:workers";
+import { requireAdmin, type AdminRow } from "../../../server/_admin";
+import { ensureRegistrationsSchema } from "../../../server/_db";
+import { errMsg, resolveD1 } from "../../../server/_lib";
 
-export type Env = AdminEnv & Record<string, unknown>;
+export const prerender = false;
 
 const json = (data: unknown, status = 200) =>
   new Response(JSON.stringify(data), {
@@ -15,7 +12,8 @@ const json = (data: unknown, status = 200) =>
     headers: { "content-type": "application/json; charset=utf-8" },
   });
 
-export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
+export async function GET(context: APIContext): Promise<Response> {
+  const request = context.request;
   const admin = await requireAdmin(request, env);
   if ("error" in admin) return admin.error;
   const { email, role } = admin;
@@ -52,4 +50,4 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
     console.error("admin overview d1 error", e);
     return json({ ok: false, message: `数据库查询失败：${errMsg(e)}` }, 500);
   }
-};
+}

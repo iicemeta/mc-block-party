@@ -1,11 +1,10 @@
-/// <reference types="@cloudflare/workers-types" />
-import { isAuthError, requireAuth, type AuthEnv } from "../_auth";
-import { ensureRegistrationsSchema } from "../_db";
-import { resolveD1 } from "../_lib";
+import type { APIContext } from "astro";
+import { env } from "cloudflare:workers";
+import { isAuthError, requireAuth } from "../../server/_auth";
+import { ensureRegistrationsSchema } from "../../server/_db";
+import { resolveD1 } from "../../server/_lib";
 
-export type Env = AuthEnv & {
-  IMG_UPLOAD_URL?: string;
-};
+export const prerender = false;
 
 type RegisterBody = {
   name?: unknown;
@@ -71,7 +70,8 @@ type ExistingRow = {
   student_id: string;
 };
 
-export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
+export async function POST(context: APIContext): Promise<Response> {
+  const request = context.request;
   const auth = await requireAuth(request, env);
   if (isAuthError(auth)) return auth.error;
   const { authId } = auth;
@@ -183,4 +183,4 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     console.error("d1 error", e);
     return bad("数据库写入失败，请稍后重试", 500);
   }
-};
+}

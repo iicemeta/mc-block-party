@@ -1,13 +1,13 @@
 export type EnvTurnstile = {
   TURNSTILE_SECRET?: string;
   TURNSTILE_HOSTNAMES?: string;
-} & Record<string, unknown>;
+};
 
 export const errMsg = (e: unknown): string =>
   e instanceof Error ? e.message : String(e);
 
 export const UUID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{12}$/i;
 
 export function siteverify(
   secret: string,
@@ -54,13 +54,14 @@ export function isD1(value: unknown): value is D1Database {
   );
 }
 
-export function resolveD1(env: Record<string, unknown>): D1Database | null {
+export function resolveD1(env: object): D1Database | null {
+  const source = env as Record<string, unknown>;
   const preferred = ["DB", "mc_block_party_db", "MC_BLOCK_PARTY_DB", "mc-block-party-db"];
   for (const key of preferred) {
-    const candidate = env[key];
+    const candidate = source[key];
     if (isD1(candidate)) return candidate;
   }
-  for (const candidate of Object.values(env)) {
+  for (const candidate of Object.values(source)) {
     if (isD1(candidate)) return candidate;
   }
   return null;
