@@ -16,7 +16,7 @@
 			"binding": "DB",
 			"database_name": "mc-block-party-db",
 			"database_id": "4ee7ce50-9ab9-45e3-8f87-0b349c5249fe",
-			"migrations_dir": "../../migrations"
+			"migrations_dir": "./d1/migrations"
 		}
 	],
 	// 非敏感环境变量：直接填在这里，wrangler deploy 时生效（已从原 Pages 仪表盘迁移）；
