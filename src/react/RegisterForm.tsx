@@ -198,7 +198,7 @@ function RegisterFormInner() {
         <p>
           {resultClaimed
             ? "已找回并绑定你之前的报名，信息以本次提交为准。"
-            : "欢迎加入 MC 联谊，"}
+            : "欢迎加入方块嘉年华，"}
           {!resultClaimed && <strong>{form.mcId}</strong>}
           {!resultClaimed && "！你的信息已进入活动名单。"}
         </p>
