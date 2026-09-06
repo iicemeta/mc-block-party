@@ -2,6 +2,7 @@ import { useAuth } from "@melody-auth/react";
 import { useEffect, useRef, useState } from "react";
 import { Button, Input } from "minecraft-react-ui";
 import AuthGate from "./AuthGate";
+import { LOCALE, ORG_SLUG, stashReturnTo } from "../lib/auth";
 
 type Shot = {
   id: string;
@@ -11,21 +12,21 @@ type Shot = {
   caption: string;
 };
 
-type UploadResult = { name: string; url: string };
+type UploadResult = { name: string; url: string; id?: number };
 
 const MAX_SIZE = 5 * 1024 * 1024;
 const MAX_FILES = 20;
 
 export default function ScreenshotUploader() {
   return (
-    <AuthGate enforce>
+    <AuthGate>
       <ScreenshotUploaderInner />
     </AuthGate>
   );
 }
 
 function ScreenshotUploaderInner() {
-  const { acquireToken } = useAuth();
+  const { isAuthenticated, isAuthenticating, loginRedirect, acquireToken } = useAuth();
   const [shots, setShots] = useState<Shot[]>([]);
   const [notice, setNotice] = useState("");
   const [submitted, setSubmitted] = useState(false);
@@ -42,6 +43,11 @@ function ScreenshotUploaderInner() {
   useEffect(() => {
     let cancelled = false;
     const init = async () => {
+      // 未登录不发起报名查询：页面展示登录引导（风采浏览对游客开放，不强制跳转）
+      if (!isAuthenticated) {
+        if (!cancelled) setChecking(false);
+        return;
+      }
       const accessToken = await acquireToken();
       if (!accessToken) {
         if (!cancelled) setSubmitError("登录状态已过期，请刷新页面重新登录");
@@ -74,7 +80,12 @@ function ScreenshotUploaderInner() {
     return () => {
       cancelled = true;
     };
-  }, [acquireToken]);
+  }, [isAuthenticated, acquireToken]);
+
+  const handleLogin = () => {
+    stashReturnTo();
+    void loginRedirect({ org: ORG_SLUG, locale: LOCALE });
+  };
 
   useEffect(() => {
     const urls = shots.map((s) => s.url);
@@ -164,6 +175,24 @@ function ScreenshotUploaderInner() {
     }
   };
 
+  // 未登录：不再强制跳转登录（避免游客流失），展示引导面板；浏览下方风采展示不受影响
+  if (!isAuthenticating && !isAuthenticated) {
+    return (
+      <div className="AuthLoading mc-panel">
+        <img src="/img/items/golden_apple.png" alt="" width={40} height={40} className="pixel" />
+        <h2>登录后即可晒图</h2>
+        <p className="AuthLoadingHint">
+          风采展示对所有访客开放浏览；提交截图需要先登录，并使用你报名时登记的 MC ID 署名。
+        </p>
+        <div className="SuccessActions">
+          <Button variant="primary" onClick={handleLogin}>
+            登录 / 注册
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   if (checking) {
     return (
       <div className="AuthLoading mc-panel">
@@ -194,7 +223,7 @@ function ScreenshotUploaderInner() {
         <ul className="ResultList">
           {results.map((r, i) => (
             <li key={r.url}>
-              <span className="ResultIndex">#{i + 1}</span>
+              <span className="ResultIndex">#{r.id ?? i + 1}</span>
               <a href={r.url} target="_blank" rel="noreferrer">
                 {r.url}
               </a>
