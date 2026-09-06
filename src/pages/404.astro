@@ -1,0 +1,99 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { SITE_CONFIG } from "../config/site";
+
+// 装饰性漂浮方块（视觉参数，与首页同款风格）
+const blocks = [
+  { src: "/img/items/tnt.png", size: 56, left: "8%", top: "20%", d: "7s", delay: "0s", blur: false, rot: "-8deg" },
+  { src: "/img/items/coal.png", size: 44, left: "18%", top: "70%", d: "6s", delay: "1.2s", blur: false, rot: "10deg" },
+  { src: "/img/items/ender_pearl.png", size: 40, left: "80%", top: "24%", d: "5.5s", delay: "0.6s", blur: false, rot: "0deg" },
+  { src: "/img/items/grass_block.png", size: 64, left: "88%", top: "66%", d: "8s", delay: "0.3s", blur: true, rot: "-6deg" },
+  { src: "/img/items/diamond.png", size: 36, left: "68%", top: "12%", d: "6.5s", delay: "1.6s", blur: true, rot: "12deg" },
+];
+---
+
+<Layout title={`页面不存在 · ${SITE_CONFIG.name}`}>
+  <section class="ErrPage">
+    {blocks.map((b) => (
+      <img
+        src={b.src}
+        alt=""
+        width={b.size}
+        height={b.size}
+        class:list={["pixel", "float-block", { blur: b.blur }]}
+        style={`left:${b.left};top:${b.top};--d:${b.d};--delay:${b.delay};--rot:${b.rot};`}
+      />
+    ))}
+    <div class="mc-panel ErrPanel">
+      <p class="ErrCode" aria-hidden="true">
+        <img src="/img/items/coal_block.png" alt="" width={40} height={40} class="pixel" />
+        404
+      </p>
+      <h1 class="ErrTitle">这个区块还没生成</h1>
+      <p class="ErrDesc">你要找的页面掉进了虚空，或者链接本身挖错了地方。</p>
+      <div class="ErrActions">
+        <a class="ErrBtn primary" href="/">
+          <img src="/img/items/grass_block.png" alt="" width={18} height={18} class="pixel" />
+          回到主页
+        </a>
+        <a class="ErrBtn" href="/gallery">
+          <img src="/img/items/ender_pearl.png" alt="" width={18} height={18} class="pixel" />
+          去逛风采墙
+        </a>
+      </div>
+    </div>
+  </section>
+</Layout>
+
+<style>
+  .ErrPage {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+    padding: 3rem 1rem;
+  }
+  .ErrPanel {
+    position: relative;
+    z-index: 1;
+    max-width: 480px;
+    width: 100%;
+    padding: 2.2rem 2rem;
+    text-align: center;
+  }
+  .ErrCode {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin: 0 0 0.6rem;
+    font-size: 3rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    color: var(--fg, inherit);
+  }
+  .ErrTitle {
+    margin: 0 0 0.5rem;
+    font-size: 1.3rem;
+  }
+  .ErrDesc {
+    margin: 0 0 1.6rem;
+    opacity: 0.75;
+  }
+  .ErrActions {
+    display: flex;
+    gap: 0.8rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .ErrBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.6rem 1.1rem;
+  }
+  .ErrBtn.primary {
+    font-weight: 700;
+  }
+</style>
