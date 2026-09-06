@@ -1,15 +1,21 @@
 ---
+import { SITE_CONFIG } from "../config/site";
 const year = new Date().getFullYear();
 ---
 
 <footer class="Footer">
   <div class="Footer-clubs">
-    <span class="club cyan">MyGO!!!!!</span>
-    <img src="/img/items/golden_apple.png" alt="" width="20" height="20" class="pixel" />
-    <span class="club coal">山商煤炭社</span>
+    {SITE_CONFIG.footer.clubs.map((c, i) => (
+      <>
+        {i > 0 && (
+          <img src="/img/items/golden_apple.png" alt="" width="20" height="20" class="pixel" />
+        )}
+        <span class:list={["club", c.color]}>{c.name}</span>
+      </>
+    ))}
   </div>
-  <p>方块嘉年华 · {year}</p>
-  <p class="Footer-team">开发团队：MyGO!!!!!</p>
+  <p>{SITE_CONFIG.name} · {year}</p>
+  <p class="Footer-team">{SITE_CONFIG.footer.credit}</p>
 </footer>
 
 <style>

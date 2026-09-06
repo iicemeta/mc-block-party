@@ -2,9 +2,10 @@
 import Layout from "../layouts/Layout.astro";
 import ScreenshotUploader from "../react/ScreenshotUploader";
 import ShowcaseGallery from "../react/ShowcaseGallery";
+import { SITE_CONFIG } from "../config/site";
 ---
 
-<Layout title="摄影展 · 晒出你的高光 · 方块嘉年华">
+<Layout title={`摄影展 · 晒出你的高光 · ${SITE_CONFIG.name}`}>
   <div class="page-header">
     <img src="/img/items/ender_pearl.png" alt="" class="pixel" />
     <div>

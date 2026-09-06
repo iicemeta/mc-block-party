@@ -1,8 +1,9 @@
 ---
 import Layout from "../layouts/Layout.astro";
+import { SITE_CONFIG } from "../config/site";
 ---
 
-<Layout title="页面已迁移 · 方块嘉年华" soundPrompt={false}>
+<Layout title={`页面已迁移 · ${SITE_CONFIG.name}`} soundPrompt={false}>
   <script is:inline>
     window.location.replace("/me");
   </script>

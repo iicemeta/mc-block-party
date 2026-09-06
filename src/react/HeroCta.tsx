@@ -2,6 +2,7 @@ import { AuthProvider, useAuth } from "@melody-auth/react";
 import { useEffect, useState } from "react";
 import { Button } from "minecraft-react-ui";
 import { authConfig } from "../lib/auth";
+import { SITE_CONFIG } from "../config/site";
 
 export default function HeroCta() {
   return (
@@ -43,15 +44,15 @@ function HeroCtaInner() {
 
   // 昵称口径与导航栏 AuthUser 一致：firstName 优先，回退邮箱；已报名则显示 MC ID
   const fallbackName = account?.first_name || account?.email || "已登录";
-  const label = isAuthenticated ? `欢迎您，${mcId || fallbackName}` : "登录并报名";
+  const label = isAuthenticated ? `欢迎您，${mcId || fallbackName}` : SITE_CONFIG.cta.primary;
 
   return (
     <div className="HeroCta">
-      <a href="/me">
+      <a href={SITE_CONFIG.cta.primaryHref}>
         <Button variant="primary">{label}</Button>
       </a>
-      <a href="/lottery">
-        <Button variant="secondary">查看随机组队</Button>
+      <a href={SITE_CONFIG.cta.secondaryHref}>
+        <Button variant="secondary">{SITE_CONFIG.cta.secondary}</Button>
       </a>
     </div>
   );

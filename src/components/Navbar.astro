@@ -1,5 +1,6 @@
 ---
 import AuthStatus from "../react/AuthStatus";
+import { SITE_CONFIG } from "../config/site";
 const links = [
   { href: "/", label: "主页", icon: "/img/items/grass_block.png" },
   { href: "/lottery", label: "随机组队", icon: "/img/items/tnt.png" },
@@ -12,8 +13,8 @@ const isAuthCallback = path === "/auth/callback";
 <nav class="Navbar">
   <a class="Navbar-logo" href="/">
     <img src="/img/items/crafting_table.png" alt="" width="26" height="26" class="pixel" />
-    <span>方块嘉年华</span>
-    <small>MyGO!!!!! × 山商煤炭社</small>
+    <span>{SITE_CONFIG.name}</span>
+    <small>{SITE_CONFIG.coHost}</small>
   </a>
   <div class="Navbar-links">
     {
