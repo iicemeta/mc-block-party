@@ -2,7 +2,7 @@ import type { APIContext } from "astro";
 import { env } from "cloudflare:workers";
 import { isAuthError, requireAuth } from "../../server/_auth";
 import { ensureRegistrationsSchema, ensureShowcaseSchema } from "../../server/_db";
-import { getVar, resolveD1 } from "../../server/_lib";
+import { resolveD1 } from "../../server/_lib";
 
 export const prerender = false;
 
@@ -29,7 +29,7 @@ export async function POST(context: APIContext): Promise<Response> {
   if (isAuthError(auth)) return auth.error;
   const { authId } = auth;
 
-  const upstreamUrl = getVar(env, "IMG_UPLOAD_URL").trim();
+  const upstreamUrl = env.IMG_UPLOAD_URL.trim();
   if (!upstreamUrl) {
     console.error("upload 500: IMG_UPLOAD_URL 未配置");
     return bad("服务端未配置 IMG_UPLOAD_URL（值应为完整的图床接口地址）", 500);

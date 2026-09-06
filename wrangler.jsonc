@@ -24,14 +24,19 @@
 	"vars": {
 		"MCAUTH_SERVER_URI": "https://auth.iicemeta.com",
 		"MCAUTH_CLIENT_ID": "03566153d5abd1ef459c5fab8d5124558E6C515f2D5DD09B60386205A7c57815",
-		"SUPER_ADMIN_EMAIL": "richardmiku@vip.qq.com"
+		"SUPER_ADMIN_EMAIL": "richardmiku@vip.qq.com",
+		// 图床上游接口地址：图片 URL 本就公开展示在风采墙，无需保密，用普通变量即可
+		"IMG_UPLOAD_URL": "https://official-img.iicemeta.com"
 	},
-	// 敏感变量（密钥类）不放配置文件，用命令设置（原 Pages 仪表盘的加密变量 API 读不到明文，需手动执行一次）：
-	//   wrangler secret put IMG_UPLOAD_URL
+	// 敏感变量（密钥类）不放配置文件，用命令设置：
 	//   wrangler secret put TURNSTILE_SECRET      （启用 Turnstile 时）
 	//   wrangler secret put TURNSTILE_HOSTNAMES   （启用 Turnstile 时）
 	// 本地调试写入 .dev.vars（已被 .gitignore 忽略）
 	"observability": {
-		"enabled": true
+		"logs": {
+			"enabled": true,
+			"invocation_logs": true,
+			"persist": true
+		}
 	}
 }

@@ -6,12 +6,6 @@ export type EnvTurnstile = {
 export const errMsg = (e: unknown): string =>
   e instanceof Error ? e.message : String(e);
 
-/** 读取运行时变量（wrangler types 生成的 Env 是 interface，无法直接按索引访问） */
-export function getVar(env: object, key: string): string {
-  const value = (env as Record<string, unknown>)[key];
-  return typeof value === "string" ? value : "";
-}
-
 export const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{12}$/i;
 
