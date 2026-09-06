@@ -66,15 +66,15 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   const db = resolveD1(env);
   if (!db) return bad("数据库绑定不可用", 500);
 
-  let registrationUuid: string;
+  let registrationId: number;
   let mcId: string;
   try {
     await ensureRegistrationsSchema(db);
 
     const reg = await db
-      .prepare("SELECT uuid, mc_id FROM registrations WHERE auth_id = ?1")
+      .prepare("SELECT id, mc_id FROM registrations WHERE auth_id = ?1")
       .bind(authId)
-      .first<{ uuid: string; mc_id: string }>();
+      .first<{ id: number; mc_id: string }>();
     if (!reg) {
       return json(
         {
@@ -85,7 +85,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
         403
       );
     }
-    registrationUuid = reg.uuid;
+    registrationId = reg.id;
     mcId = reg.mc_id;
   } catch (e) {
     console.error("upload d1 error", e);
@@ -115,20 +115,25 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
 
   try {
     await ensureShowcaseSchema(db);
-    await db.batch(
+    const inserted = await db.batch(
       results.map((r, i) =>
         db
           .prepare(
-            `INSERT INTO showcase (registration_uuid, mc_id, image_url, caption)
+            `INSERT INTO showcase (registration_id, mc_id, image_url, caption)
              VALUES (?1, ?2, ?3, ?4)`
           )
-          .bind(registrationUuid, mcId, r.url, (captions[i] ?? "").slice(0, 100))
+          .bind(registrationId, mcId, r.url, (captions[i] ?? "").slice(0, 100))
       )
     );
+    // 回填图片编号（showcase.id 行主键），供展示区快速定位
+    const withIds = results.map((r, i) => ({
+      name: r.name,
+      url: r.url,
+      id: inserted[i]?.meta?.last_row_id ?? 0,
+    }));
+    return json({ ok: true, mcId, results: withIds });
   } catch (e) {
     console.error("upload d1 error", e);
     return bad("图片已上传，但风采展示记录写入失败，请稍后重试", 500);
   }
-
-  return json({ ok: true, mcId, results });
 };

@@ -4,7 +4,7 @@ import {
   fetchUserInfo,
   type AdminEnv,
 } from "../../_admin";
-import { ensureAdminsSchema, ensureUsersSchema, upsertUser } from "../../_db";
+import { ensureUsersSchema, upsertUser } from "../../_db";
 import { isAuthError, requireAuth } from "../../_auth";
 import { errMsg, resolveD1 } from "../../_lib";
 
@@ -49,7 +49,6 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     await ensureUsersSchema(db);
     await upsertUser(db, { authId: auth.authId, email, nickname });
 
-    await ensureAdminsSchema(db);
     role = await determineRole(db, env, auth.authId, email);
     admin = role !== null;
     return json({ ok: true, synced: true, admin, role });
