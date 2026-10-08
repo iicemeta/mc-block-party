@@ -5,6 +5,14 @@ import {
 } from "@melody-auth/web";
 import { useEffect, useState } from "react";
 import {
+  Button,
+  Dropdown,
+  Menu,
+  Tag,
+  Tooltip,
+  type MenuItemProps,
+} from "@iicemeta/minecraft-react-ui";
+import {
   authConfig,
   clearCachedAdminRole,
   getCachedAdminRole,
@@ -20,6 +28,16 @@ import {
   type CachedAdminRole,
 } from "../lib/auth";
 
+const ROLE_LABEL: Record<Exclude<CachedAdminRole, "no">, string> = {
+  super: "超级管理员",
+  admin: "管理员",
+};
+
+/**
+ * 导航栏的登录状态。视觉全部交给组件库：
+ * 未登录 = Button(primary)；已登录 = Dropdown + Menu（账号菜单）+ Tag（角色）+ Tooltip。
+ * 鉴权逻辑与之前完全一致，只换表现层。
+ */
 export default function AuthStatus() {
   const [account, setAccount] = useState<ReturnType<typeof readAccount>>(null);
   const [adminRole, setAdminRole] = useState<CachedAdminRole>("no");
@@ -98,34 +116,61 @@ export default function AuthStatus() {
     );
   };
 
-  const displayName = account
-    ? account.first_name || account.email || "已登录"
-    : "";
+  if (!account) {
+    return (
+      <Button type="button" variant="primary" onClick={handleLogin}>
+        <span className="mc-inline">
+          <img src="/img/items/golden_apple.png" alt="" width={20} height={20} className="pixel" />
+          登录 / 注册
+        </span>
+      </Button>
+    );
+  }
+
+  const displayName = account.first_name || account.email || "已登录";
+  const items: MenuItemProps[] = [
+    {
+      id: "me",
+      label: "个人中心",
+      onClick: () => window.location.assign("/me"),
+    },
+    ...(adminRole !== "no"
+      ? [
+          {
+            id: "admin",
+            label: onAdminPage ? "管理控制台（当前页）" : "管理控制台",
+            disabled: onAdminPage,
+            onClick: () => window.location.assign("/admin"),
+          } satisfies MenuItemProps,
+        ]
+      : []),
+    { id: "logout", label: "退出登录", onClick: () => void handleLogout() },
+  ];
 
   return (
     <div className="AuthStatus">
-      {account ? (
-        <>
-          <a className="AuthUser" href="/me" title="进入个人主页">
-            <img src="/img/items/diamond.png" alt="" width={20} height={20} className="pixel" />
-            {displayName}
-          </a>
-          {adminRole !== "no" && (
-            <a className={"Navbar-link" + (onAdminPage ? " current" : "")} href="/admin" title="管理控制台">
-              <img src="/img/items/redstone_block.png" alt="" width={20} height={20} className="pixel" />
-              管理
-            </a>
-          )}
-          <button type="button" className="AuthBtn" onClick={() => void handleLogout()}>
-            退出
-          </button>
-        </>
-      ) : (
-        <button type="button" className="AuthBtn" onClick={handleLogin}>
-          <img src="/img/items/golden_apple.png" alt="" width={20} height={20} className="pixel" />
-          登录 / 注册
-        </button>
-      )}
+      <Dropdown
+        placement="bottom-end"
+        closeOnClickOutside
+        closeOnClickContent
+        content={<Menu items={items} />}
+        target={
+          <Button type="button" variant="clear" className="AuthUser" title="账号菜单">
+            <span className="mc-inline">
+              <img src="/img/items/diamond.png" alt="" width={20} height={20} className="pixel" />
+              <span className="AuthUser-name">{displayName}</span>
+              {adminRole !== "no" && (
+                <Tooltip
+                  placement="bottom"
+                  content={`${ROLE_LABEL[adminRole]}：可以进入管理控制台`}
+                >
+                  <Tag className="Tag_success">{ROLE_LABEL[adminRole]}</Tag>
+                </Tooltip>
+              )}
+            </span>
+          </Button>
+        }
+      />
     </div>
   );
 }

@@ -8,26 +8,84 @@
   src: url("/fonts/fusion-pixel-12px-proportional-zh_hans.ttf.woff2") format("woff2");
 }
 
+/* ============================================================================
+   设计令牌
+   ----------------------------------------------------------------------------
+   组件的全部外观都来自 minecraft-react-ui 的 CSS 变量，本站只负责把这些变量
+   映射成「方块嘉年华」的配色。库自带的调色板是 #23232a 系（偏灰、偏亮），
+   与本站的近黑背景不是一套，所以凡是库会读取、而本站不覆盖的变量，都会悄悄
+   回落到库的默认值 —— 下面按「库读什么就补什么」的原则逐个补齐。
+   ========================================================================== */
 :root {
+  /* ---- 基础三层：底 / 地面 / 前景 ------------------------------------ */
   --background-color: #141419;
   --midground-color: #2c2c35;
-  --foreground-color: #4a4a58;
+  /* 前景色同时是 MenuItem 悬停底色、Checkbox/Radio 悬停时的勾选色。
+     库默认 #8b8b8b 偏亮，本站取一个在深底上既可见、又不抢眼的灰。 */
+  --foreground-color: #5c5c6e;
+
+  /* ---- 主色：绿宝石（MyGO!!!!! 侧） --------------------------------- */
   --primary-color: #3b8526;
   --primary-color-hover: #50ad2e;
   --primary-color-active: #4bbc22;
   --primary-color-dark: #1d4d13;
-  --accent-color: #2e6be5;
+  /* 半透明变体：List 的「筛选命中 / 当前项」高亮底色 */
+  --primary-color-30: rgba(59, 133, 38, 0.3);
+  --primary-color-hover-30: rgba(80, 173, 46, 0.3);
+  --primary-color-active-30: rgba(75, 188, 34, 0.3);
+
+  /* ---- 次色：浅灰「石质」面（次要按钮 / 标签 / 空控件底色） ---------- */
   --secondary-color: #d0d1d4;
+  --secondary-color-hover: #f4f6f9;
+  --secondary-color-active: #ffffff;
   --secondary-color-dark: #58585a;
+  --secondary-color-30: rgba(208, 209, 212, 0.3);
+  --secondary-color-hover-30: rgba(244, 246, 249, 0.3);
+  --secondary-color-active-30: rgba(177, 178, 181, 0.3);
+
+  /* ---- 强调色：链接、Tooltip 与 Slider 提示气泡 ---------------------- */
+  --accent-color: #2e6be5;
+
+  /* ---- 状态色 ------------------------------------------------------- */
+  --success-color: #89ffb2;
+  --warning-color: #fcd58c;
+  --error-color: #ff8383;
+
+  /* ---- 文字 --------------------------------------------------------- */
   --text-color: #ffffff;
+  /* 画在浅灰面（次要按钮、Tag、空控件）上的墨色 */
   --text-color-invert: #1a1a21;
+
+  /* ---- 像素浮雕（库的 bezel 体系） ---------------------------------- */
   --bezel-color: rgba(0, 0, 0, 0.45);
+  --bezel-color-semi: rgba(128, 128, 128, 0.45);
   --bezel-color-invert: rgba(255, 255, 255, 0.18);
+
+  /* ---- 浮层层级 ------------------------------------------------------
+     库把 Dropdown / Tooltip 的面板 portal 到 <body>，层级由此变量决定。
+     本站导航栏 z-index 50，音效弹窗 200：这里取 100，保证下拉菜单压过导航栏，
+     又不会反压住模态。库 1.0.2 起读取此变量；更早的版本需要站点自己声明
+     .Dropdown/.Tooltip 的 z-index。 */
+  --floating-z-index: 100;
+
+  /* ---- 控件细节修补 --------------------------------------------------
+     库的这几处默认值在深色主题里不成立，逐个修正（详见 CHANGELOG 说明）：
+     · --checkbox/radio 的悬停勾选色默认取 --foreground-color（深灰，压绿底看不见）
+     · --switch-border-color 默认引用 --primary-border-color，而该变量在库中从未定义
+     · --switch 的悬停轨道色同样是深灰 */
+  --checkbox-text-hover-color: rgba(255, 255, 255, 0.72);
+  --radio-text-hover-color: rgba(255, 255, 255, 0.72);
+  --switch-text-hover-color-30: rgba(255, 255, 255, 0.14);
+  --switch-border-color: var(--primary-color-dark);
+
+  /* ---- 本站自有令牌 -------------------------------------------------- */
+  /* 双社团色：绿宝石侧与煤炭侧，全部组件与页面只引用这两个名字 */
   --club-ctech: #50ad2e;
   --club-ctech-dark: #1d4d13;
   --club-coal: #ffb040;
   --club-coal-dark: #6e4304;
   --pixel-font: "Minercraftory", "Fusion Pixel", "Courier New", monospace;
+  --mc-radius: 0; /* 像素风不圆角，留作统一出口 */
 }
 
 html {
@@ -52,6 +110,29 @@ img.pixel {
   image-rendering: pixelated;
 }
 
+/* 库的组件在自己的规则里写死了 font-family: Minecraft, Minercraftory —— 这套
+   字体栈里没有中文字形，中文会掉回系统无衬线体，与站点其余中文（Fusion Pixel）
+   不一致。这里把库组件统一接到本站字体栈上。 */
+.Button,
+.Tag,
+.Menu,
+.MenuItem,
+.MenuIcon,
+.Input,
+.Select,
+.Dropdown,
+.Tooltip,
+.List,
+.FlexBox,
+.Slider,
+.Switch,
+.Checkbox,
+.Radio,
+.CheckboxGroup,
+.RadioGroup {
+  font-family: var(--pixel-font);
+}
+
 .Page {
   flex: 1;
   width: 100%;
@@ -61,16 +142,112 @@ img.pixel {
   box-sizing: border-box;
 }
 
+/* ============================================================================
+   面板与卡片
+   ========================================================================== */
+
+/* 像素浮雕面板：与库的 .Menu 用同一套 bezel 变量，视觉语言一致 */
 .mc-panel {
   background-color: var(--midground-color);
   box-shadow:
-    inset 0 -4px 0 0 rgba(0, 0, 0, 0.45),
-    inset -4px 0 0 0 rgba(0, 0, 0, 0.45),
-    inset 0 4px 0 0 rgba(255, 255, 255, 0.16),
-    inset 4px 0 0 0 rgba(255, 255, 255, 0.16),
+    inset 0 -4px 0 0 var(--bezel-color),
+    inset -4px 0 0 0 var(--bezel-color),
+    inset 0 4px 0 0 var(--bezel-color-invert),
+    inset 4px 0 0 0 var(--bezel-color-invert),
     0 0 0 4px #0c0c10;
   padding: 24px;
 }
+
+/* 面板标题条：图标 + 标题 +（可选）右侧标签 */
+.mc-panel-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: -4px 0 18px;
+  padding-bottom: 12px;
+  border-bottom: 4px solid rgba(0, 0, 0, 0.35);
+  font-size: 1.15rem;
+}
+
+.mc-panel-head img {
+  width: 26px;
+  height: 26px;
+}
+
+.mc-panel-head .mc-panel-head-spacer {
+  flex: 1;
+}
+
+/* 社团主题卡：左侧色条区分双方 */
+.mc-card {
+  position: relative;
+  background-color: var(--midground-color);
+  box-shadow:
+    inset 0 -4px 0 0 var(--bezel-color),
+    inset -4px 0 0 0 var(--bezel-color),
+    inset 0 4px 0 0 var(--bezel-color-invert),
+    inset 4px 0 0 0 var(--bezel-color-invert),
+    0 0 0 4px #0c0c10;
+  padding: 22px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.mc-card:hover {
+  transform: translateY(-4px);
+}
+
+.mc-card > .mc-card-accent {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 6px;
+}
+
+.mc-card--ctech > .mc-card-accent {
+  background-color: var(--club-ctech);
+}
+
+.mc-card--coal > .mc-card-accent {
+  background-color: var(--club-coal);
+}
+
+.mc-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+/* 库组件的 children 会被包进 .ButtonText，图标 + 文字需要自己拼一个 flex 行 */
+.mc-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mc-inline img {
+  width: 20px;
+  height: 20px;
+}
+
+.mc-toolbar-spacer {
+  flex: 1;
+}
+
+.mc-grid {
+  display: grid;
+  gap: 20px;
+}
+
+.mc-empty {
+  padding: 32px 20px;
+  text-align: center;
+  opacity: 0.65;
+  font-size: 0.9rem;
+}
+
+/* ============================================================================
+   页头 / 小标题 / 说明文字
+   ========================================================================== */
 
 .page-header {
   display: flex;
@@ -111,6 +288,38 @@ img.pixel {
   height: 28px;
 }
 
+.mc-kicker {
+  margin: 0;
+  font-size: 0.78rem;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--club-ctech);
+}
+
+.mc-muted {
+  opacity: 0.7;
+  font-size: 0.88rem;
+}
+
+.mc-hint {
+  font-size: 0.85rem;
+  opacity: 0.75;
+}
+
+.mc-warn {
+  color: var(--warning-color);
+  font-size: 0.85rem;
+}
+
+.mc-error {
+  color: var(--error-color);
+  font-size: 0.85rem;
+}
+
+/* ============================================================================
+   漂浮方块 / XP 条（主页动效与抽奖进度共用）
+   ========================================================================== */
+
 .float-block {
   position: absolute;
   image-rendering: pixelated;
@@ -124,8 +333,11 @@ img.pixel {
 .xp-bar {
   height: 14px;
   background-color: #101014;
-  box-shadow: inset 0 -2px 0 0 var(--bezel-color), inset -2px 0 0 0 var(--bezel-color),
-    inset 0 2px 0 0 var(--bezel-color-invert), inset 2px 0 0 0 var(--bezel-color-invert);
+  box-shadow:
+    inset 0 -2px 0 0 var(--bezel-color),
+    inset -2px 0 0 0 var(--bezel-color),
+    inset 0 2px 0 0 var(--bezel-color-invert),
+    inset 2px 0 0 0 var(--bezel-color-invert);
   overflow: hidden;
 }
 
@@ -135,9 +347,73 @@ img.pixel {
   background: repeating-linear-gradient(90deg, #7fe62c 0 8px, #5fbf1a 8px 16px);
 }
 
-/* ---- 登录认证（melody auth）---- */
+/* ============================================================================
+   导航（链接用 <a>，视觉直接复用库的 .Button 类，不再手抄浮雕阴影）
+   ========================================================================== */
 
-/* ---- 音效选择弹窗 ---- */
+.mc-navlink {
+  text-decoration: none;
+  gap: 8px;
+  font-size: 0.95rem;
+}
+
+.mc-navlink img {
+  width: 20px;
+  height: 20px;
+}
+
+/* ============================================================================
+   登录状态（AuthStatus 岛屿）
+   ========================================================================== */
+
+.AuthStatus {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.AuthLoading {
+  max-width: 560px;
+  margin: 0 auto;
+  text-align: center;
+  padding: 36px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  animation: popIn 0.3s ease-out;
+}
+
+.AuthLoadingHint {
+  font-size: 0.85rem;
+  opacity: 0.7;
+}
+
+.AuthUser {
+  gap: 8px;
+  max-width: 220px;
+}
+
+.AuthUser-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.AuthUser img {
+  width: 20px;
+  height: 20px;
+}
+
+.VerifyHint,
+.SubmitPending {
+  font-size: 0.85rem;
+  opacity: 0.7;
+}
+
+/* ============================================================================
+   首访音效弹窗
+   ========================================================================== */
 
 .SoundPrompt {
   position: fixed;
@@ -152,7 +428,7 @@ img.pixel {
 }
 
 .SoundPrompt-panel {
-  max-width: 380px;
+  max-width: 400px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -182,90 +458,14 @@ img.pixel {
   margin-top: 8px;
 }
 
-.SoundOn {
-  background-color: var(--primary-color);
-}
-
-.SoundOn:hover {
-  background-color: var(--accent-color) !important;
-}
-
 .SoundPrompt-panel small {
   opacity: 0.6;
   font-size: 0.75rem;
 }
 
-.AuthLoading {
-  max-width: 560px;
-  margin: 0 auto;
-  text-align: center;
-  padding: 36px 24px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  animation: popIn 0.3s ease-out;
-}
-
-.AuthLoadingHint {
-  font-size: 0.85rem;
-  opacity: 0.7;
-}
-
-.AuthStatus {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.AuthBtn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 7px 14px;
-  border: none;
-  cursor: pointer;
-  color: var(--text-color);
-  background-color: var(--midground-color);
-  font-family: var(--pixel-font);
-  font-size: 0.95rem;
-  box-shadow:
-    inset 0 -3px 0 0 rgba(0, 0, 0, 0.45),
-    inset -3px 0 0 0 rgba(0, 0, 0, 0.45),
-    inset 0 3px 0 0 rgba(255, 255, 255, 0.16),
-    inset 3px 0 0 0 rgba(255, 255, 255, 0.16);
-}
-
-.AuthBtn:hover {
-  background-color: var(--accent-color);
-}
-
-.AuthUser {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 7px 12px;
-  font-size: 0.88rem;
-  color: var(--club-ctech);
-  text-decoration: none;
-  cursor: pointer;
-  background: rgba(255, 255, 255, 0.05);
-  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.1);
-  max-width: 220px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.AuthUser:hover {
-  background: rgba(255, 255, 255, 0.12);
-}
-
-.VerifyHint,
-.SubmitPending {
-  font-size: 0.85rem;
-  opacity: 0.7;
-}
+/* ============================================================================
+   动画
+   ========================================================================== */
 
 @keyframes floatY {
   0%,
@@ -334,8 +534,36 @@ img.pixel {
   }
 }
 
+/* 尊重系统的「减少动态效果」：漂浮方块停止、动效降为瞬时 */
+@media (prefers-reduced-motion: reduce) {
+  .float-block {
+    animation: none;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
 @media (max-width: 768px) {
   .Page {
     padding: 16px 12px 48px;
+  }
+
+  .mc-panel {
+    padding: 18px 16px;
+  }
+
+  .page-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .section-title {
+    font-size: 1.15rem;
+    margin: 36px 0 16px;
   }
 }

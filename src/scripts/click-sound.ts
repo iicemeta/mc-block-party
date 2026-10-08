@@ -188,8 +188,8 @@ function showSoundPrompt(): void {
       <h2>开启按钮音效？</h2>
       <p>本站的按钮自带一点点像素风音效。<br />浏览器规定：需要你先点一下，我们才能播放声音。</p>
       <div class="SoundPrompt-actions">
-        <button type="button" class="AuthBtn SoundOn" data-sound-choice="on">开启音效</button>
-        <button type="button" class="AuthBtn" data-sound-choice="off">保持静音</button>
+        <button type="button" class="Button Button_primary" data-sound-choice="on">开启音效</button>
+        <button type="button" class="Button Button_secondary" data-sound-choice="off">保持静音</button>
       </div>
       <small>之后可随时用导航栏右侧的音效按钮切换</small>
     </div>`;

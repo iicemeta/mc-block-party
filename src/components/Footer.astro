@@ -1,20 +1,31 @@
 ---
 import { SITE_CONFIG } from "../config/site";
+
 const year = new Date().getFullYear();
 ---
 
 <footer class="Footer">
   <div class="Footer-clubs">
-    {SITE_CONFIG.footer.clubs.map((c, i) => (
-      <>
-        {i > 0 && (
-          <img src="/img/items/golden_apple.png" alt="" width="20" height="20" class="pixel" />
-        )}
-        <span class:list={["club", c.color]}>{c.name}</span>
-      </>
-    ))}
+    {
+      SITE_CONFIG.footer.clubs.map((c, i) => (
+        <>
+          {i > 0 && (
+            <img
+              src="/img/items/golden_apple.png"
+              alt=""
+              width="20"
+              height="20"
+              class="pixel"
+            />
+          )}
+          <span class:list={["club", c.color]}>{c.name}</span>
+        </>
+      ))
+    }
   </div>
-  <p>{SITE_CONFIG.name} · {year}</p>
+  <p>
+    {SITE_CONFIG.name} · {year}
+  </p>
   <p class="Footer-team">{SITE_CONFIG.footer.credit}</p>
 </footer>
 
@@ -37,8 +48,9 @@ const year = new Date().getFullYear();
     margin-bottom: 8px;
   }
 
-  .club.cyan {
-    color: #00ffff;
+  /* 双社团色与主页二维码卡同源（--club-*），不再是页脚另一套配色 */
+  .club.ctech {
+    color: var(--club-ctech);
   }
 
   .club.coal {

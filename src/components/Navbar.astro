@@ -1,32 +1,61 @@
 ---
 import AuthStatus from "../react/AuthStatus";
 import { SITE_CONFIG } from "../config/site";
+
+/**
+ * 导航栏。视觉不再手写浮雕阴影：链接直接复用组件库的 .Button + 变体类，
+ * 与站点其它按钮完全同源（- 38 行自定义 CSS）。
+ * 当前页用 Button_primary + Button_active 表达「按下」态，与库的按压语义一致。
+ */
 const links = [
   { href: "/", label: "主页", icon: "/img/items/grass_block.png" },
   { href: "/lottery", label: "随机组队", icon: "/img/items/tnt.png" },
   { href: "/gallery", label: "晒图提交", icon: "/img/items/ender_pearl.png" },
 ];
-const path = Astro.url.pathname.length > 1 ? Astro.url.pathname.replace(/\/$/, "") : "/";
+const path =
+  Astro.url.pathname.length > 1 ? Astro.url.pathname.replace(/\/$/, "") : "/";
 const isAuthCallback = path === "/auth/callback";
 ---
 
 <nav class="Navbar">
   <a class="Navbar-logo" href="/">
-    <img src="/img/items/crafting_table.png" alt="" width="26" height="26" class="pixel" />
-    <span>{SITE_CONFIG.name}</span>
+    <img
+      src="/img/items/crafting_table.png"
+      alt=""
+      width="26"
+      height="26"
+      class="pixel"
+    />
+    <span class="Navbar-name">{SITE_CONFIG.name}</span>
     <small>{SITE_CONFIG.coHost}</small>
   </a>
+
   <div class="Navbar-links">
     {
       links.map((l) => (
-        <a href={l.href} class:list={["Navbar-link", { current: path === l.href }]}>
+        <a
+          href={l.href}
+          class:list={[
+            "Button",
+            "mc-navlink",
+            path === l.href ? "Button_primary" : "Button_secondary",
+            { Button_active: path === l.href },
+          ]}
+        >
           <img src={l.icon} alt="" width="20" height="20" class="pixel" />
           {l.label}
         </a>
       ))
     }
+
     {!isAuthCallback && <AuthStatus client:load />}
-    <button type="button" class="MuteBtn" data-mute-toggle aria-label="切换音效">
+
+    <button
+      type="button"
+      class="Button Button_clear MuteBtn"
+      data-mute-toggle
+      aria-label="切换按钮音效"
+    >
       <img src="/img/items/note_block.png" alt="" width="20" height="20" class="pixel" />
       <span class="MuteOn">音效:开</span>
       <span class="MuteOff">已静音</span>
@@ -59,6 +88,7 @@ const isAuthCallback = path === "/auth/callback";
     color: var(--text-color);
     font-size: 1.15rem;
     text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.6);
+    white-space: nowrap;
   }
 
   .Navbar-logo small {
@@ -69,99 +99,58 @@ const isAuthCallback = path === "/auth/callback";
 
   .Navbar-links {
     display: flex;
+    align-items: center;
     gap: 8px;
     flex-wrap: wrap;
   }
-</style>
 
-<!-- React 岛屿（AuthStatus 的管理按钮）也会使用该类，必须全局作用域 -->
-<style is:global>
-  .Navbar-link {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 7px 14px;
-    text-decoration: none;
-    color: var(--text-color);
-    background-color: var(--midground-color);
-    font-size: 0.95rem;
-    box-shadow:
-      inset 0 -3px 0 0 rgba(0, 0, 0, 0.45),
-      inset -3px 0 0 0 rgba(0, 0, 0, 0.45),
-      inset 0 3px 0 0 rgba(255, 255, 255, 0.16),
-      inset 3px 0 0 0 rgba(255, 255, 255, 0.16);
-    transition: background-color 0.15s;
-  }
-
-  .Navbar-link:hover {
-    background-color: var(--primary-color);
-  }
-
-  .Navbar-link.current {
-    background-color: var(--primary-color-dark);
-    box-shadow:
-      inset 0 3px 0 0 rgba(0, 0, 0, 0.45),
-      inset 3px 0 0 0 rgba(0, 0, 0, 0.45),
-      inset 0 -3px 0 0 rgba(255, 255, 255, 0.16),
-      inset -3px 0 0 0 rgba(255, 255, 255, 0.16);
-  }
-</style>
-
-<style>
   .MuteBtn {
-    display: flex;
-    align-items: center;
     gap: 8px;
-    padding: 7px 14px;
-    border: none;
-    cursor: pointer;
-    color: var(--text-color);
-    background-color: var(--midground-color);
-    font-family: var(--pixel-font);
     font-size: 0.95rem;
-    box-shadow:
-      inset 0 -3px 0 0 rgba(0, 0, 0, 0.45),
-      inset -3px 0 0 0 rgba(0, 0, 0, 0.45),
-      inset 0 3px 0 0 rgba(255, 255, 255, 0.16),
-      inset 3px 0 0 0 rgba(255, 255, 255, 0.16);
-  }
-
-  .MuteBtn:hover {
-    background-color: var(--accent-color);
+    white-space: nowrap;
   }
 
   .MuteOff {
     display: none;
-    color: #ffb040;
+    color: var(--club-coal);
   }
 
-  html.sound-muted .MuteOn {
+  /* 静音态：由 click-sound.ts 在 <html> 上维护 sound-muted */
+  :global(html.sound-muted) .MuteOn {
     display: none;
   }
 
-  html.sound-muted .MuteOff {
+  :global(html.sound-muted) .MuteOff {
     display: inline;
   }
 
-  html.sound-muted .MuteBtn img {
+  :global(html.sound-muted) .MuteBtn img {
     filter: grayscale(1) brightness(0.55);
   }
 
-  html.sound-muted .MuteBtn {
-    box-shadow:
-      inset 0 3px 0 0 rgba(0, 0, 0, 0.45),
-      inset 3px 0 0 0 rgba(0, 0, 0, 0.45),
-      inset 0 -3px 0 0 rgba(255, 255, 255, 0.16),
-      inset -3px 0 0 0 rgba(255, 255, 255, 0.16);
-  }
-
-  @media (max-width: 768px) {
+  @media (max-width: 860px) {
     .Navbar {
       flex-direction: column;
+      align-items: stretch;
+      gap: 10px;
+    }
+
+    .Navbar-logo {
+      justify-content: center;
     }
 
     .Navbar-logo small {
       display: none;
+    }
+
+    .Navbar-links {
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .Navbar-links :global(.Button) {
+      padding: 6px 10px;
+      font-size: 0.85rem;
     }
   }
 </style>

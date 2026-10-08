@@ -28,7 +28,7 @@ export type StepCard = {
 export type FooterClub = {
   name: string;
   /** 页脚社团名配色（对应 Footer.astro 里的 .club.<color> 样式） */
-  color: "cyan" | "coal";
+  color: "ctech" | "coal";
 };
 
 export const SITE_CONFIG = {
@@ -101,7 +101,7 @@ export const SITE_CONFIG = {
   footer: {
     /** 顶部双社团展示行，社团名之间以金苹果图标分隔 */
     clubs: [
-      { name: "MyGO!!!!!", color: "cyan" },
+      { name: "MyGO!!!!!", color: "ctech" },
       { name: "Yuzusoft", color: "coal" },
     ] as FooterClub[],
     /** 底部团队署名行 */
