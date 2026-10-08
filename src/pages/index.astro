@@ -3,43 +3,65 @@ import Layout from "../layouts/Layout.astro";
 import HeroCta from "../react/HeroCta";
 import { SITE_CONFIG } from "../config/site";
 
-// 装饰性漂浮方块（位置/尺寸等视觉参数，非文案，保留在组件内）
+/**
+ * 装饰性漂浮方块。
+ * 只放在左右两侧的「安全带」（≤15% / ≥85%）或标题带之外的上下边缘，
+ * 保证不会压到居中的文案与按钮 —— 之前中部几个方块会盖在信息条上。
+ */
 const heroBlocks = [
-  { src: "/img/items/diamond.png", size: 56, left: "6%", top: "18%", d: "7s", delay: "0s", blur: false, rot: "-8deg" },
-  { src: "/img/items/coal.png", size: 44, left: "14%", top: "68%", d: "6s", delay: "1.2s", blur: false, rot: "10deg" },
-  { src: "/img/items/tnt.png", size: 64, left: "26%", top: "30%", d: "8s", delay: "0.6s", blur: true, rot: "6deg" },
-  { src: "/img/items/ender_pearl.png", size: 40, left: "38%", top: "76%", d: "5.5s", delay: "2s", blur: false, rot: "0deg" },
-  { src: "/img/items/golden_apple.png", size: 52, left: "58%", top: "12%", d: "6.5s", delay: "0.3s", blur: true, rot: "-12deg" },
-  { src: "/img/items/redstone_block.png", size: 58, left: "72%", top: "62%", d: "7.5s", delay: "1.6s", blur: false, rot: "8deg" },
-  { src: "/img/items/diamond_pickaxe.png", size: 60, left: "84%", top: "22%", d: "6s", delay: "0.9s", blur: false, rot: "18deg" },
-  { src: "/img/items/grass_block.png", size: 72, left: "90%", top: "70%", d: "9s", delay: "0s", blur: true, rot: "-6deg" },
+  { src: "/img/items/diamond.png", size: 56, left: "5%", top: "16%", d: "7s", delay: "0s", blur: false, rot: "-8deg" },
+  { src: "/img/items/coal.png", size: 42, left: "12%", top: "66%", d: "6s", delay: "1.2s", blur: false, rot: "10deg" },
+  { src: "/img/items/ender_pearl.png", size: 38, left: "8%", top: "86%", d: "5.5s", delay: "2s", blur: true, rot: "0deg" },
+  { src: "/img/items/grass_block.png", size: 68, left: "88%", top: "72%", d: "9s", delay: "0s", blur: true, rot: "-6deg" },
+  { src: "/img/items/diamond_pickaxe.png", size: 58, left: "85%", top: "20%", d: "6s", delay: "0.9s", blur: false, rot: "18deg" },
+  { src: "/img/items/redstone_block.png", size: 50, left: "90%", top: "46%", d: "7.5s", delay: "1.6s", blur: false, rot: "8deg" },
+  { src: "/img/items/tnt.png", size: 58, left: "24%", top: "84%", d: "8s", delay: "0.6s", blur: true, rot: "6deg" },
+  { src: "/img/items/golden_apple.png", size: 44, left: "78%", top: "86%", d: "6.5s", delay: "0.3s", blur: true, rot: "-12deg" },
 ];
 
-const { hero, clubs, steps } = SITE_CONFIG;
+const { hero, clubs, steps, fairness } = SITE_CONFIG;
 const marqueeText = SITE_CONFIG.marquee;
+
+/** 信息条 "标签：内容" → 拆成 <Tag> + 值，文案本身仍只在 site.ts 里改 */
+const splitTag = (t: string) => {
+  const i = t.indexOf("：");
+  return i === -1 ? { label: "", value: t } : { label: t.slice(0, i), value: t.slice(i + 1) };
+};
 ---
 
 <Layout>
   <section class="Hero">
-    {heroBlocks.map((b) => (
-      <img
-        src={b.src}
-        alt=""
-        width={b.size}
-        height={b.size}
-        class:list={["pixel", "float-block", { blur: b.blur }]}
-        style={`left:${b.left};top:${b.top};--d:${b.d};--delay:${b.delay};--rot:${b.rot};`}
-      />
-    ))}
+    {
+      heroBlocks.map((b) => (
+        <img
+          src={b.src}
+          alt=""
+          width={b.size}
+          height={b.size}
+          class:list={["pixel", "float-block", { blur: b.blur }]}
+          style={`left:${b.left};top:${b.top};--d:${b.d};--delay:${b.delay};--rot:${b.rot};`}
+        />
+      ))
+    }
     <div class="Hero-inner">
-      <p class="Hero-kicker">{hero.kicker}</p>
+      <p class="mc-kicker Hero-kicker">{hero.kicker}</p>
       <h1 class="Hero-title">{hero.title}</h1>
       <p class="Hero-sub">{hero.tagline}</p>
+
       <div class="Hero-tags">
-        {hero.tags.map((t) => (
-          <span class="mc-panel TagBox">{t}</span>
-        ))}
+        {
+          hero.tags.map((t) => {
+            const { label, value } = splitTag(t);
+            return (
+              <span class="Hero-tag">
+                {label && <span class="Tag Hero-tag-label">{label}</span>}
+                <span class="Hero-tag-value">{value}</span>
+              </span>
+            );
+          })
+        }
       </div>
+
       <div class="Hero-cta">
         <HeroCta client:load />
       </div>
@@ -53,65 +75,93 @@ const marqueeText = SITE_CONFIG.marquee;
     </div>
   </div>
 
+  <aside class="Fairness mc-panel">
+    <img src={fairness.icon} alt="" width={40} height={40} class="pixel" />
+    <div class="Fairness-body">
+      <strong>{fairness.title}</strong>
+      <p>{fairness.desc}</p>
+    </div>
+    <a class="Button Button_secondary Fairness-cta" href={fairness.href}>
+      {fairness.cta}
+    </a>
+  </aside>
+
   <h2 class="section-title">
     <img src="/img/items/golden_apple.png" alt="" class="pixel" />
     扫码进群 · 蹲个队友
   </h2>
   <div class="ClubGrid">
-    {clubs.map((c) => (
-      <div class:list={["ClubCard", "mc-panel", c.color]}>
-        <div class="ClubHead">
-          <img src={c.icon} alt="" width={36} height={36} class="pixel" />
-          <strong>{c.name}</strong>
+    {
+      clubs.map((c) => (
+        <div class:list={["mc-card", "ClubCard", `mc-card--${c.color}`]}>
+          <span class="mc-card-accent" aria-hidden="true" />
+          <div class="ClubHead">
+            <img src={c.icon} alt="" width={36} height={36} class="pixel" />
+            <strong class:list={[c.color]}>{c.name}</strong>
+          </div>
+          <p>{c.desc}</p>
+          <img class="ClubQR pixel" src={c.qr} alt={`${c.name}入群二维码（示例，请替换）`} />
+          <div class="ClubFoot">
+            <span class="Tag ClubTag">{c.tag}</span>
+            <span class="mc-muted">示例二维码，以实际发布为准</span>
+          </div>
         </div>
-        <p>{c.desc}</p>
-        <img class="ClubQR pixel" src={c.qr} alt={`${c.name}入群二维码（示例，请替换）`} />
-        <span class="ClubTag">{c.tag}（示例二维码，以实际发布为准）</span>
-      </div>
-    ))}
+      ))
+    }
   </div>
 
   <h2 class="section-title">
     <img src="/img/items/diamond_pickaxe.png" alt="" class="pixel" />
     活动流程
   </h2>
-  <div class="StepGrid">
-    {steps.map((s) => (
-      <div class="StepCard mc-panel">
-        <img src={s.icon} alt="" width={44} height={44} class="pixel" />
-        <strong>{s.title}</strong>
-        <p>{s.desc}</p>
-      </div>
-    ))}
-  </div>
+  <ol class="StepGrid">
+    {
+      steps.map((s, i) => (
+        <li class="mc-card StepCard">
+          <span class="StepCard-index">{i + 1}</span>
+          <img src={s.icon} alt="" width={44} height={44} class="pixel" />
+          <strong>{s.title}</strong>
+          <p>{s.desc}</p>
+        </li>
+      ))
+    }
+  </ol>
 </Layout>
 
 <style>
+  /* ------------------------------------------------------------------ Hero */
   .Hero {
     position: relative;
     overflow: hidden;
-    min-height: 420px;
+    min-height: 460px;
     display: flex;
     align-items: center;
     justify-content: center;
     text-align: center;
-    padding: 40px 20px;
+    padding: 48px 20px;
     box-shadow:
       inset 0 -4px 0 0 rgba(0, 0, 0, 0.5),
       0 6px 0 0 rgba(0, 0, 0, 0.35);
   }
 
+  /* 暗角，让中间的标题更聚焦 */
+  .Hero::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(ellipse at center, transparent 35%, rgba(0, 0, 0, 0.45) 100%);
+  }
+
   .Hero-inner {
     position: relative;
     z-index: 1;
-    max-width: 720px;
+    max-width: 760px;
   }
 
   .Hero-kicker {
-    letter-spacing: 6px;
-    font-size: 0.85rem;
-    opacity: 0.65;
-    margin: 0 0 10px;
+    margin: 0 0 12px;
+    color: var(--club-ctech);
   }
 
   .Hero-title {
@@ -142,46 +192,47 @@ const marqueeText = SITE_CONFIG.marquee;
     margin-bottom: 28px;
   }
 
-  .TagBox {
-    padding: 8px 14px;
-    font-size: 0.88rem;
+  /* 信息条：标签用库的 Tag（像素切角），内容跟在其后 */
+  .Hero-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 12px 7px 8px;
+    background-color: rgba(0, 0, 0, 0.35);
+    box-shadow:
+      inset 0 -3px 0 0 rgba(0, 0, 0, 0.45),
+      inset 0 3px 0 0 rgba(255, 255, 255, 0.1);
+    font-size: 0.9rem;
+  }
+
+  .Hero-tag-value {
+    opacity: 0.95;
   }
 
   .Hero-cta {
     display: flex;
     justify-content: center;
-    gap: 14px;
-    flex-wrap: wrap;
   }
 
-  .HeroCta {
-    display: flex;
-    justify-content: center;
-    gap: 14px;
-    flex-wrap: wrap;
+  /* CTA 按钮比正文按钮大一号，但沿用库的浮雕，不另写一套 */
+  .Hero-cta :global(.Button) {
+    font-size: 1.05rem;
+    letter-spacing: 2px;
   }
 
-  .HeroCta a {
+  .Hero-cta :global(a) {
     text-decoration: none;
   }
 
-  .HeroCta .Button {
-    font-size: 1.05rem;
-    letter-spacing: 2px;
-    padding: 12px 28px;
-    box-shadow:
-      inset 0 -4px 0 0 rgba(0, 0, 0, 0.4),
-      inset -4px 0 0 0 rgba(0, 0, 0, 0.4),
-      inset 0 4px 0 0 rgba(255, 255, 255, 0.25),
-      inset 4px 0 0 0 rgba(255, 255, 255, 0.25),
-      0 0 0 3px #0c0c10;
-  }
-
+  /* -------------------------------------------------------------- Marquee */
   .Marquee {
     overflow: hidden;
-    margin: 36px -20px 8px;
+    /* 满宽：抵消 .Page 的左右内边距（窄屏会自动换成 12px，不再溢出） */
+    margin: 36px calc(var(--page-pad) * -1) 8px;
     background: var(--primary-color-dark);
-    box-shadow: inset 0 -4px 0 0 rgba(0, 0, 0, 0.5), inset 0 4px 0 0 rgba(255, 255, 255, 0.12);
+    box-shadow:
+      inset 0 -4px 0 0 rgba(0, 0, 0, 0.5),
+      inset 0 4px 0 0 rgba(255, 255, 255, 0.12);
   }
 
   .Marquee-track {
@@ -194,6 +245,41 @@ const marqueeText = SITE_CONFIG.marquee;
     opacity: 0.9;
   }
 
+  /* ------------------------------------------------------------- 算法公示 */
+  .Fairness {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin-top: 32px;
+    flex-wrap: wrap;
+  }
+
+  .Fairness-body {
+    /* min-width: 0 很关键：flex 子项的自动最小尺寸是 min-content，
+       固定 260px 会在窄屏把整页撑宽（右侧内容被裁掉）。 */
+    flex: 1 1 240px;
+    min-width: 0;
+  }
+
+  .Fairness-body strong {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 1.05rem;
+  }
+
+  .Fairness-body p {
+    margin: 0;
+    font-size: 0.88rem;
+    line-height: 1.8;
+    opacity: 0.8;
+  }
+
+  .Fairness-cta {
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  /* ------------------------------------------------------------- 社团卡片 */
   .ClubGrid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -202,29 +288,7 @@ const marqueeText = SITE_CONFIG.marquee;
 
   .ClubCard {
     text-align: center;
-    transition: transform 0.18s ease;
-  }
-
-  .ClubCard:hover {
-    transform: translateY(-6px);
-  }
-
-  .ClubCard.ctech {
-    box-shadow:
-      inset 0 -4px 0 0 rgba(0, 0, 0, 0.45),
-      inset -4px 0 0 0 rgba(0, 0, 0, 0.45),
-      inset 0 4px 0 0 rgba(255, 255, 255, 0.16),
-      inset 4px 0 0 0 rgba(255, 255, 255, 0.16),
-      0 0 0 4px var(--club-ctech);
-  }
-
-  .ClubCard.coal {
-    box-shadow:
-      inset 0 -4px 0 0 rgba(0, 0, 0, 0.45),
-      inset -4px 0 0 0 rgba(0, 0, 0, 0.45),
-      inset 0 4px 0 0 rgba(255, 255, 255, 0.16),
-      inset 4px 0 0 0 rgba(255, 255, 255, 0.16),
-      0 0 0 4px var(--club-coal);
+    padding-left: 28px;
   }
 
   .ClubHead {
@@ -236,11 +300,11 @@ const marqueeText = SITE_CONFIG.marquee;
     margin-bottom: 10px;
   }
 
-  .ClubCard.ctech .ClubHead strong {
-    color: #ffffff;
+  .ClubHead strong.ctech {
+    color: var(--club-ctech);
   }
 
-  .ClubCard.coal .ClubHead strong {
+  .ClubHead strong.coal {
     color: var(--club-coal);
   }
 
@@ -258,22 +322,44 @@ const marqueeText = SITE_CONFIG.marquee;
     box-shadow: 0 0 0 4px #0c0c10;
   }
 
-  .ClubTag {
-    display: block;
-    margin-top: 12px;
-    font-size: 0.78rem;
-    opacity: 0.6;
+  .ClubFoot {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    margin-top: 14px;
   }
 
+  /* --------------------------------------------------------------- 流程 */
   .StepGrid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 16px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
   }
 
   .StepCard {
+    position: relative;
     text-align: center;
-    padding: 20px 14px;
+    padding: 26px 14px 20px;
+  }
+
+  /* 左上角的步骤序号，与 ①②③④ 的文案互为呼应 */
+  .StepCard-index {
+    position: absolute;
+    top: -12px;
+    left: -12px;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    color: var(--text-color-invert);
+    background-color: var(--secondary-color);
+    box-shadow: 0 0 0 3px #0c0c10;
   }
 
   .StepCard strong {
@@ -288,13 +374,29 @@ const marqueeText = SITE_CONFIG.marquee;
     opacity: 0.7;
   }
 
-  @media (max-width: 768px) {
+  @media (max-width: 860px) {
     .ClubGrid {
       grid-template-columns: 1fr;
     }
 
     .StepGrid {
       grid-template-columns: 1fr 1fr;
+    }
+
+    .Hero {
+      min-height: 380px;
+      padding: 32px 16px;
+    }
+
+    /* 窄屏时侧边方块会挤到文字，只留最外层的装饰 */
+    .Hero :global(.float-block) {
+      opacity: 0.4;
+    }
+  }
+
+  @media (max-width: 560px) {
+    .StepGrid {
+      grid-template-columns: 1fr;
     }
   }
 </style>

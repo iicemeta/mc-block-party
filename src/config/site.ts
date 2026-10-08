@@ -58,6 +58,19 @@ export const SITE_CONFIG = {
   /** 主页跑马灯滚动文案 */
   marquee: "MyGO!!!!! × Yuzusoft · 方块嘉年华第一期 ·  ",
 
+  /**
+   * 主页「组队算法公示」提示条。
+   * 设计文档要求随机组队必须公开抽取核心源码以示公正，抽取页有完整折叠面板，
+   * 主页这条负责把入口亮出来。
+   */
+  fairness: {
+    icon: "/img/items/redstone_block.png",
+    title: "组队算法公开可查",
+    desc: "抽取使用 Fisher-Yates 洗牌：源码在随机组队页原样展示，填入同一个种子即可复现同一结果。",
+    href: "/lottery",
+    cta: "查看源码与组队",
+  },
+
   /** 扫码进群社团卡片 */
   clubs: [
     {

@@ -42,17 +42,27 @@ function HeroCtaInner() {
     };
   }, [isAuthenticated, acquireToken]);
 
-  // 昵称口径与导航栏 AuthUser 一致：firstName 优先，回退邮箱；已报名则显示 MC ID
+  // 昵称口径与导航栏 AuthStatus 一致：firstName 优先，回退邮箱；已报名则显示 MC ID
   const fallbackName = account?.first_name || account?.email || "已登录";
   const label = isAuthenticated ? `欢迎您，${mcId || fallbackName}` : SITE_CONFIG.cta.primary;
 
   return (
     <div className="HeroCta">
       <a href={SITE_CONFIG.cta.primaryHref}>
-        <Button variant="primary">{label}</Button>
+        <Button variant="primary">
+          <span className="mc-inline">
+            <img src="/img/items/golden_apple.png" alt="" width={20} height={20} className="pixel" />
+            {label}
+          </span>
+        </Button>
       </a>
       <a href={SITE_CONFIG.cta.secondaryHref}>
-        <Button variant="secondary">{SITE_CONFIG.cta.secondary}</Button>
+        <Button variant="secondary">
+          <span className="mc-inline">
+            <img src="/img/items/tnt.png" alt="" width={20} height={20} className="pixel" />
+            {SITE_CONFIG.cta.secondary}
+          </span>
+        </Button>
       </a>
     </div>
   );

@@ -134,11 +134,14 @@ img.pixel {
 }
 
 .Page {
+  /* 页面左右内边距做成变量：满宽元素（跑马灯等）用 calc(var(--page-pad) * -1)
+     抵消内边距即可贴到视口边缘，窄屏换值也不会溢出。 */
+  --page-pad: 20px;
   flex: 1;
   width: 100%;
   max-width: 1080px;
   margin: 0 auto;
-  padding: 24px 20px 64px;
+  padding: 24px var(--page-pad) 64px;
   box-sizing: border-box;
 }
 
@@ -551,7 +554,8 @@ img.pixel {
 
 @media (max-width: 768px) {
   .Page {
-    padding: 16px 12px 48px;
+    --page-pad: 12px;
+    padding: 16px var(--page-pad) 48px;
   }
 
   .mc-panel {
