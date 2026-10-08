@@ -1,6 +1,6 @@
 import { useAuth } from "@melody-auth/react";
 import { useEffect, useRef, useState } from "react";
-import { Button, Input } from "minecraft-react-ui";
+import { Button, Input } from "@iicemeta/minecraft-react-ui";
 import AuthGate from "./AuthGate";
 import { LOCALE, ORG_SLUG, stashReturnTo } from "../lib/auth";
 

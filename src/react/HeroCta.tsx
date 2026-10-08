@@ -1,6 +1,6 @@
 import { AuthProvider, useAuth } from "@melody-auth/react";
 import { useEffect, useState } from "react";
-import { Button } from "minecraft-react-ui";
+import { Button } from "@iicemeta/minecraft-react-ui";
 import { authConfig } from "../lib/auth";
 import { SITE_CONFIG } from "../config/site";
 

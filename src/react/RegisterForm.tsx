@@ -1,6 +1,6 @@
 import { useAuth } from "@melody-auth/react";
 import { useEffect, useMemo, useState } from "react";
-import { Button, CheckboxGroup, Input, Tag } from "minecraft-react-ui";
+import { Button, CheckboxGroup, Input, Tag } from "@iicemeta/minecraft-react-ui";
 import AuthGate from "./AuthGate";
 import { STORAGE_KEYS, loadJSON, saveJSON } from "../lib/storage";
 

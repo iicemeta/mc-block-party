@@ -13,7 +13,7 @@
 - 页面全部预渲染为静态资源（免费、不计 Workers 请求）
 - 后端接口位于 `src/pages/api/**`（`export const prerender = false`，按需渲染走 Worker）
 - 数据存 **Cloudflare D1**（绑定名 `DB`），图片存外部图床（由 `IMG_UPLOAD_URL` 指定上游接口）
-- 鉴权使用 melody auth 的 JWT（无状态），UI 组件库为仓库内 vendor 的 `minecraft-react-ui`
+- 鉴权使用 melody auth 的 JWT（无状态），UI 组件库为 npm 依赖 **`@iicemeta/minecraft-react-ui@^1.0.2`**
 
 ## 页面一览
 
@@ -149,7 +149,6 @@ npx wrangler d1 migrations apply mc-block-party-db --local
 │   ├── scripts/               # 全局脚本（点击音效）
 │   ├── server/                # 接口共用服务端逻辑（鉴权、D1、管理员）
 │   └── styles/                # 全局样式
-├── vendor/minecraft-react-ui  # 内置 UI 组件库（见 minecraft-react-ui-USAGE.md）
 ├── wrangler.jsonc             # Workers 配置（绑定、vars、可观测性）
 └── .env.production            # 公开的前端构建变量（astro build 自动加载）
 ```
@@ -159,4 +158,6 @@ npx wrangler d1 migrations apply mc-block-party-db --local
 - [`docs/auth-setup.md`](docs/auth-setup.md) —— melody auth 接入配置
 - [`docs/cloudflare-register-backend.md`](docs/cloudflare-register-backend.md) —— 后端与数据库说明
 - [`docs/superpowers/specs/`](docs/superpowers/specs/) —— UI / 鉴权设计文档
-- [`minecraft-react-ui-USAGE.md`](minecraft-react-ui-USAGE.md) —— UI 组件库用法
+- UI 组件库用法：[npm 包页](https://www.npmjs.com/package/@iicemeta/minecraft-react-ui) ·
+  [仓库与组件文档](https://github.com/iicemeta/minecraft-react-ui)
+  （用法文档随包分发，见 `node_modules/@iicemeta/minecraft-react-ui/USAGE.md`）

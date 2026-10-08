@@ -1,5 +1,10 @@
 # MC 联谊活动网站 UI 实现计划
 
+> **2026-10-08 更新：** UI 组件库已改为 npm 安装 `@iicemeta/minecraft-react-ui@^1.0.2`。
+> 当时只能内嵌 vendor，是因为该库尚未正式发布到 npm；现已发布，`vendor/`、`scripts/check-vendor.mjs`、
+> `scripts/list-dist-imports.mjs` 与仓库内的 `minecraft-react-ui-USAGE.md` 均已删除。
+> 下文保留当时的过程记录，其中"vendored / file: 依赖"的描述不再代表当前状态。
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** 完成双社团 MC 联谊活动网站的全部 UI（主页/报名/随机组队/晒图提交），提交后端暂不接入。

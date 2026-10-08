@@ -1,6 +1,6 @@
 import { useAuth } from "@melody-auth/react";
 import { useCallback, useEffect, useState } from "react";
-import { Button, Input, Tag } from "minecraft-react-ui";
+import { Button, Input, Tag } from "@iicemeta/minecraft-react-ui";
 import AuthGate from "./AuthGate";
 
 type AdminInfo = {

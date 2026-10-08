@@ -1,6 +1,6 @@
 import { useAuth } from "@melody-auth/react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Button, Input, Tag } from "minecraft-react-ui";
+import { Button, Input, Tag } from "@iicemeta/minecraft-react-ui";
 import { assignTeams, mulberry32, type Team } from "../lib/shuffle";
 import { MOCK_PARTICIPANTS } from "../lib/mockParticipants";
 import AuthGate from "./AuthGate";
