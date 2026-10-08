@@ -352,17 +352,36 @@ img.pixel {
 
 /* ============================================================================
    导航（链接用 <a>，视觉直接复用库的 .Button 类，不再手抄浮雕阴影）
+
+   「当前页」用尺寸差表达：未选中更小、选中更大。这里刻意不用库的
+   .Button_active —— 它的语义是「按住」，实现上把 4px 立体边从底部挪到顶部
+   （border-width: 0 0 4px 0 → 4px 0 0），而基类的 border-top-color: transparent
+   没有被覆盖、background-clip 又是 padding-box，于是顶部空出 4px 透明缝：
+   可见的按钮面反而比未选中的小 4px，内容也被整体推下 4px，看起来「选中了更小」。
    ========================================================================== */
 
 .mc-navlink {
   text-decoration: none;
-  gap: 8px;
-  font-size: 0.95rem;
+  gap: 6px;
+  padding: 6px 11px;
+  font-size: 0.8rem;
 }
 
 .mc-navlink img {
-  width: 20px;
-  height: 20px;
+  width: 16px;
+  height: 16px;
+}
+
+/* 当前页：整体大一号（字号、内边距、图标同步放大） */
+.mc-navlink.is-current {
+  gap: 8px;
+  padding: 11px 20px;
+  font-size: 1.1rem;
+}
+
+.mc-navlink.is-current img {
+  width: 24px;
+  height: 24px;
 }
 
 /* ============================================================================
@@ -373,6 +392,14 @@ img.pixel {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+/* 登录 / 注册与账号按钮处在「当前页」和「未选中导航」之间的一档：
+   比普通导航链接更醒目（它是行动号召），但明确小于当前页，
+   避免两个同色的大按钮并列时看不出哪个是「你在这里」。 */
+.AuthStatus .Button {
+  padding: 6px 12px;
+  font-size: 0.95rem;
 }
 
 .AuthLoading {

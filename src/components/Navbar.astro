@@ -5,7 +5,7 @@ import { SITE_CONFIG } from "../config/site";
 /**
  * 导航栏。视觉不再手写浮雕阴影：链接直接复用组件库的 .Button + 变体类，
  * 与站点其它按钮完全同源（- 38 行自定义 CSS）。
- * 当前页用 Button_primary + Button_active 表达「按下」态，与库的按压语义一致。
+ * 当前页 = Button_primary + .is-current，靠「更大一号」表达，见 global.css。
  */
 const links = [
   { href: "/", label: "主页", icon: "/img/items/grass_block.png" },
@@ -38,8 +38,7 @@ const isAuthCallback = path === "/auth/callback";
           class:list={[
             "Button",
             "mc-navlink",
-            path === l.href ? "Button_primary" : "Button_secondary",
-            { Button_active: path === l.href },
+            path === l.href ? "Button_primary is-current" : "Button_secondary",
           ]}
         >
           <img src={l.icon} alt="" width="20" height="20" class="pixel" />
@@ -102,12 +101,21 @@ const isAuthCallback = path === "/auth/callback";
     align-items: center;
     gap: 8px;
     flex-wrap: wrap;
+    /* 当前页按钮是这一行最高的元素。钉住行高，避免在「没有当前页」的页面
+       （/me、/admin、/404 等）导航栏忽然变矮 —— 点导航时高度不该跳。 */
+    min-height: 54px;
   }
 
   .MuteBtn {
-    gap: 8px;
-    font-size: 0.95rem;
+    gap: 6px;
+    padding: 8px 10px;
+    font-size: 0.8rem;
     white-space: nowrap;
+  }
+
+  .MuteBtn img {
+    width: 16px;
+    height: 16px;
   }
 
   .MuteOff {
@@ -146,11 +154,23 @@ const isAuthCallback = path === "/auth/callback";
     .Navbar-links {
       justify-content: center;
       gap: 6px;
+      min-height: 50px;
     }
 
     .Navbar-links :global(.Button) {
       padding: 6px 10px;
       font-size: 0.85rem;
+    }
+
+    /* 窄屏整体压缩，但当前页仍保留一档尺寸差 */
+    .Navbar-links :global(.mc-navlink.is-current) {
+      padding: 10px 16px;
+      font-size: 1.05rem;
+    }
+
+    .Navbar-links :global(.mc-navlink.is-current) :global(img) {
+      width: 22px;
+      height: 22px;
     }
   }
 </style>

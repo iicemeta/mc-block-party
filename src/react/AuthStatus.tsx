@@ -117,13 +117,16 @@ export default function AuthStatus() {
   };
 
   if (!account) {
+    // 与已登录分支同源：都套 .AuthStatus，否则尺寸规则（global.css）只对其中一支生效
     return (
-      <Button type="button" variant="primary" onClick={handleLogin}>
-        <span className="mc-inline">
-          <img src="/img/items/golden_apple.png" alt="" width={20} height={20} className="pixel" />
-          登录 / 注册
-        </span>
-      </Button>
+      <div className="AuthStatus">
+        <Button type="button" variant="primary" onClick={handleLogin}>
+          <span className="mc-inline">
+            <img src="/img/items/golden_apple.png" alt="" width={20} height={20} className="pixel" />
+            登录 / 注册
+          </span>
+        </Button>
+      </div>
     );
   }
 
